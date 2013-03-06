@@ -13,3 +13,7 @@ license-file:      LICENSE
 source-repository head
   type:            git
   location:        https://github.com/redelmann/e-zimod-server
+
+library
+  build-depends:   base >=4.0 && <5.0
+  exposed-modules: Model.Types, Model.Profile, Model.Machine, Model.Utils
