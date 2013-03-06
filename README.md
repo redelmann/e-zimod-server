@@ -1,2 +1,2 @@
-e-zimod-server
-==============
+Modeling and Simulation of Collaborative Energy Networks
+========================================================

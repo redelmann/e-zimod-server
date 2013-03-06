@@ -1,0 +1,15 @@
+name:              e-zimod-server
+version:           0.1
+author:            Bruno Studer, Romain Edelmann, Flavien Aubelle
+maintainer:        Bruno Studer <bruno.studer@epfl.ch>, Romain Edelmann <romain.edelmann@epfl.ch>, Flavien Aubelle <flavien.aubelle@epfl.ch>
+synopsis:          Server for Modeling and Simulation of Collaborative Energy Networks.
+description:       Server for Modeling and Simulation of Collaborative Energy Networks.
+cabal-version:     >= 1.6
+build-type:        Simple
+category:          Energy, Modelisation, Simulation, Energy Distribution, Energy Network
+license:           BSD3
+license-file:      LICENSE
+
+source-repository head
+  type:            git
+  location:        https://github.com/redelmann/e-zimod-server
