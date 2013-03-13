@@ -29,3 +29,15 @@ peek (LinearInterpolation xs) t = f xs
         | t > t2    = f vs
         | otherwise = return $ v1 + ((t - t1) / (t2 - t1)) * (v2 - v1)
     f _ = Nothing
+
+-- | Recover a Profile from a String for storing purposes
+parseprof :: String -> Maby Profile
+parsprof = undefined
+
+-- | Transform a profile into a String for storing purposes
+totext :: Profile -> String 
+totext (Constant x) = "C," ++ (show x)  
+totext (Linear t w r) = "L," ++ (show t) ++ "," ++ (show w) ++ "," ++ (show r) 
+totext (Add x y) = "A," ++ (totext x) ++ "," ++ (totext y)
+totext (Mult r p) = "M," ++ (show r) ++ "," ++ (totext p)
+totext (LinearInterpolation xs) t = undefined 
