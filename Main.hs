@@ -2,7 +2,6 @@
 
 module Main(main) where
 
-import Prelude hiding (catch)
 import Snap
 import Data.Aeson
 import qualified Data.ByteString.Char8 as BS
