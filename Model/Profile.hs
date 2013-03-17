@@ -34,7 +34,13 @@ instance ToJSON Profile where
 -- | Profile constructor. Garantees that the list of events is non empty and sorted. 
 mkProfile :: [(Second, Watt)] -> Maybe Profile
 mkProfile [] = Nothing
-mkProfile xs = Just $ Profile $ sortBy (comparing fst) xs
+mkProfile xs = Just $ Profile $ clean $ sortBy (comparing fst) xs
+  where
+    -- Removes elements occuring between two elements occuring at the same time,
+    -- only keeping right and left limits.
+    clean ((t1, v1):(_, _):(t2, v2):tvs) | t1 == t2 = clean $ (t1, v2):(t2, v2):tvs
+    clean (tv:tvs) = tv : clean tvs
+    clean [] = []
 
 -- | Evaluates a profile at a given time. Takes the limit coming from the right.
 peekr :: Profile -> Second -> Watt
