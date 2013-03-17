@@ -2,7 +2,8 @@
 module Model.Profile
     ( Profile
     , mkProfile
-    , peek
+    , peekr
+    , peekl
     , computeEnergy
     , serialize
     , deserialize
@@ -35,10 +36,20 @@ mkProfile :: [(Second, Watt)] -> Maybe Profile
 mkProfile [] = Nothing
 mkProfile xs = Just $ Profile $ sortBy (comparing fst) xs
 
--- | Evaluates a profile at a given time.
-peek :: Profile -> Second -> Watt
-peek (Profile ((t1, v1):xs)) t | t <= t1 = v1  -- When time is less or equal to first.
-peek (Profile xs) t = peek' xs
+-- | Evaluates a profile at a given time. Takes the limit coming from the right.
+peekr :: Profile -> Second -> Watt
+peekr (Profile ((t1, v1):xs)) t | t < t1 = v1  -- When time is less to first.
+peekr (Profile xs) t = peek' xs
+  where
+    peek' ((t1, v1):[]) | t >= t1 = v1  -- When time is greater or equal to last.
+    peek' ((t1, v1):rs@((t2, v2):_))
+        | t1 <= t && t < t2 = v1 + ((t - t1) / (t2 - t1)) * (v2 - v1)
+        | otherwise = peek' rs
+
+-- | Evaluates a profile at a given time. Takes the limit coming from the left.
+peekl :: Profile -> Second -> Watt
+peekl (Profile ((t1, v1):xs)) t | t <= t1 = v1  -- When time is less or equal to first.
+peekl (Profile xs) t = peek' xs
   where
     peek' ((t1, v1):[]) | t >= t1 = v1  -- When time is greater or equal to last.
     peek' ((t1, v1):rs@((t2, v2):_))
@@ -48,7 +59,7 @@ peek (Profile xs) t = peek' xs
 -- | Computes energy of a profile within a time period.
 computeEnergy :: Rational -> Rational -> Profile -> Joule
 computeEnergy a b _ | b <= a = 0
-computeEnergy a b p@(Profile xs) = snd $ foldr f ((b, peek p b), 0) $ (a, peek p a) : ys
+computeEnergy a b p@(Profile xs) = snd $ foldr f ((b, peekl p b), 0) $ (a, peekr p a) : ys
   where
     ys :: [(Second, Watt)]
     ys = takeWhile ((<b) . fst) $ dropWhile ((<=a) . fst) xs

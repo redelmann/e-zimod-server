@@ -30,4 +30,4 @@ executable e-zimod
 test-suite test-model
   type:            exitcode-stdio-1.0
   main-is:         Test/Model.hs
-  build-depends:   base, aeson, e-zimod-server
+  build-depends:   base, aeson, QuickCheck, e-zimod-server

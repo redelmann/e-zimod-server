@@ -19,8 +19,8 @@ main = quickHttpServe site
 site :: Snap ()
 site = route 
     -- Some small examples.
-    [ ("peek",  sendAsJson =<< peek <$> jsonParam "profile" 
-                                    <*> (doubleToRational <$> readParam "second")) 
+    [ ("peek",  sendAsJson =<< peekl <$> jsonParam "profile" 
+                                     <*> (doubleToRational <$> readParam "second")) 
     , ("energy", sendAsJson =<< computeEnergy <$> (doubleToRational <$> readParam "a") 
                                               <*> (doubleToRational <$> readParam "b") 
                                               <*> jsonParam "profile" ) ] 
