@@ -25,8 +25,7 @@ exitStatus = unsafePerformIO (newIORef exitSuccess)
 
 test :: NamedTest -> IO ()
 test (NamedTest s t) = do
-    putStr $ s ++ ":\t"
-    r <- quickCheckResult t
+    r <- quickCheckResult $ whenFail (putStrLn $ "*** " ++ s) $ label s t
     case r of
         (Success _ _ _) -> return ()
         _               -> writeIORef exitStatus exitFailure
