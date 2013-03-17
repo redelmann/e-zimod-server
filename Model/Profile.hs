@@ -61,4 +61,4 @@ serialize :: Profile -> String
 serialize = show
 
 deserialize :: String -> Profile
-deserialize str = read str 
+deserialize = read

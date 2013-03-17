@@ -6,3 +6,5 @@ cabal-dev
 *.chs.h
 .virthualenv
 log
+*.sh
+*.db
