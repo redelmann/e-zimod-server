@@ -9,6 +9,8 @@ import Control.Applicative
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as LBS
 
+import Model.Profile
+
 -- | Launches the HTTP server.
 main :: IO ()
 main = quickHttpServe site
@@ -16,20 +18,15 @@ main = quickHttpServe site
 -- | Main site.
 site :: Snap ()
 site = route 
-    -- Some dumb examples.
-    [ ("sum",  sendAsJson =<< sumInt  <$> jsonParam "r") 
-    , ("comb", sendAsJson =<< combInt <$> jsonParam "as" <*> jsonParam "bs" )
-    , ("plus", sendAsJson =<< plusInt <$> readParam "a" <*> readParam "b") ]
+    -- Some small examples.
+    [ ("peek",  sendAsJson =<< peek <$> jsonParam "profile" 
+                                    <*> (doubleToRational <$> readParam "second")) 
+    , ("energy", sendAsJson =<< computeEnergy <$> (doubleToRational <$> readParam "a") 
+                                              <*> (doubleToRational <$> readParam "b") 
+                                              <*> jsonParam "profile" ) ] 
   where
-    -- Specifying types.
-    sumInt :: [Int] -> Int
-    sumInt = sum
-
-    combInt :: [Int] -> [Int] -> [(Int, Int)]
-    combInt as bs = (,) <$> as <*> bs
-
-    plusInt :: Int -> Int -> Int
-    plusInt = (+)
+    doubleToRational :: Double -> Rational
+    doubleToRational = toRational
 
 -- | Responds immediately with specified code and message.
 respondWith :: Int -> BS.ByteString -> Snap a
