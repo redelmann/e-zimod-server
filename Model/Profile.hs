@@ -19,7 +19,7 @@ import Model.Types
 
 -- | Power profile. Determines the power at some given time.
 data Profile = Profile [(Second, Watt)]  -- Sorted by increasing second, and non empty.
-               deriving (Show, Read)
+               deriving (Show, Read, Eq)
 
 instance FromJSON Profile where
     parseJSON json = do

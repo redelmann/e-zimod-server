@@ -8,11 +8,6 @@ import Data.Maybe (isJust)
 import Model.Types
 import Model.Profile
 
-withProfile :: [(Second, Watt)] -> (Profile -> Bool) -> Bool
-withProfile xs f = case mkProfile xs of
-    Just p  -> f p
-    Nothing -> False
-
 profile1 :: Bool
 profile1 = not $ isJust $ mkProfile []
 
@@ -64,13 +59,13 @@ computeEnergy2 t0 dt w0 w1 = withProfile [(t0, w0), (t0, w1), (t1, w1), (t1, w0)
 
 main :: IO ()
 main = tests
-    [ "Profile construction without any point" <~> profile1
-    , "Profile construction with at least one point" <~> profile2
-    , "Peekr on constant profile"   <~> peekr1
-    , "Peekr on two points profile" <~> peekr2
+    [ "Profile construction without any point"                                  <~> profile1
+    , "Profile construction with at least one point"                            <~> profile2
+    , "Peekr on constant profile"                                               <~> peekr1
+    , "Peekr on two points profile"                                             <~> peekr2
     , "Peekr on same valued elements returns the last (rightmost) in the list." <~> peekr3
-    , "Peekl on constant profile"   <~> peekl1
-    , "Peekl on two points profile" <~> peekl2
+    , "Peekl on constant profile"                                               <~> peekl1
+    , "Peekl on two points profile"                                             <~> peekl2
     , "Peekl on same valued elements returns the first (leftmost) in the list." <~> peekl3
-    , "Energy always positive or null if profile is always positive." <~> computeEnergy1 
-    , "Energy is computed correctly in case of values occuring at same time." <~> computeEnergy2 ]
+    , "Energy always positive or null if profile is always positive."           <~> computeEnergy1 
+    , "Energy is computed correctly in case of values occuring at same time."   <~> computeEnergy2 ]
