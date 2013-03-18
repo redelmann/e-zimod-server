@@ -11,7 +11,6 @@ import Test.QuickCheck
 
 import Data.Maybe (fromJust)
 import Data.IORef
-import System.IO.Unsafe (unsafePerformIO)
 import System.Exit (exitSuccess, exitFailure)
 
 import Model.Types
@@ -24,12 +23,8 @@ data NamedTest = forall t. Testable t => NamedTest String t
 (<~>) :: Testable t => String -> t -> NamedTest
 (<~>) = NamedTest
 
-exitStatus :: IORef (IO ())
-{-# NOINLINE exitStatus #-}
-exitStatus = unsafePerformIO (newIORef exitSuccess)
-
-test :: NamedTest -> IO ()
-test (NamedTest s t) = do
+test :: IORef (IO ()) -> NamedTest -> IO ()
+test exitStatus (NamedTest s t) = do
     r <- quickCheckResult $ whenFail (putStrLn $ "*** " ++ s) $ label s t
     case r of
         (Success _ _ _) -> return ()
@@ -37,8 +32,9 @@ test (NamedTest s t) = do
 
 tests :: [NamedTest] -> IO ()
 tests ts = do
-  mapM test ts
-  readIORef exitStatus >>= id
+    exitStatus <- newIORef exitSuccess
+    mapM (test exitStatus) ts
+    readIORef exitStatus >>= id
 
 withProfile :: [(Second, Watt)] -> (Profile -> Bool) -> Bool
 withProfile xs f = case mkProfile xs of
