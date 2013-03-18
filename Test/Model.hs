@@ -57,15 +57,23 @@ computeEnergy2 t0 dt w0 w1 = withProfile [(t0, w0), (t0, w1), (t1, w1), (t1, w0)
   where
     t1 = t0 + getPositive dt
 
+computeEnergy3 :: Second -> Positive Second -> Positive Second -> NonEmptyList (Second, Watt) -> Bool
+computeEnergy3 t0 dt1 dt2 xs = withProfile (getNonEmpty xs) $ \ p ->
+    computeEnergy t0 t1 p + computeEnergy t1 t2 p == computeEnergy t0 t2 p
+  where
+    t1 = t0 + getPositive dt1
+    t2 = t1 + getPositive dt2
+
 main :: IO ()
 main = tests
-    [ "Profile construction without any point"                                  <~> profile1
-    , "Profile construction with at least one point"                            <~> profile2
-    , "Peekr on constant profile"                                               <~> peekr1
-    , "Peekr on two points profile"                                             <~> peekr2
-    , "Peekr on same valued elements returns the last (rightmost) in the list." <~> peekr3
-    , "Peekl on constant profile"                                               <~> peekl1
-    , "Peekl on two points profile"                                             <~> peekl2
-    , "Peekl on same valued elements returns the first (leftmost) in the list." <~> peekl3
-    , "Energy always positive or null if profile is always positive."           <~> computeEnergy1 
-    , "Energy is computed correctly in case of values occuring at same time."   <~> computeEnergy2 ]
+    [ "Profile construction without any point."                                        <~> profile1
+    , "Profile construction with at least one point."                                  <~> profile2
+    , "Peekr on constant profile."                                                     <~> peekr1
+    , "Peekr on two points profile."                                                   <~> peekr2
+    , "Peekr on same valued elements returns the last (rightmost) in the list."        <~> peekr3
+    , "Peekl on constant profile."                                                     <~> peekl1
+    , "Peekl on two points profile."                                                   <~> peekl2
+    , "Peekl on same valued elements returns the first (leftmost) in the list."        <~> peekl3
+    , "Energy always positive or null if profile is always positive."                  <~> computeEnergy1 
+    , "Energy is computed correctly in case of values occuring at same time."          <~> computeEnergy2
+    , "Energy from a to b + energy from b to c equals energy from a to c (a < b < c)." <~> computeEnergy3 ]
