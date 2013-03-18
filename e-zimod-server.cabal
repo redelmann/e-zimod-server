@@ -25,7 +25,8 @@ executable e-zimod
   build-depends:   base,
                    snap,
                    aeson,
-                   bytestring
+                   bytestring,
+                   rand-vars
 
 test-suite test-model
   type:            exitcode-stdio-1.0

@@ -6,10 +6,16 @@ import Snap
 import Data.Monoid
 import Data.Aeson
 import Control.Applicative
+import Control.Monad
+import Control.Monad.Random
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as LBS
 
 import Model.Profile
+import Model.Types
+
+instance RandPicker Snap where
+    pick = liftIO . pick
 
 -- | Launches the HTTP server.
 main :: IO ()
@@ -23,10 +29,29 @@ site = route
                                      <*> (doubleToRational <$> readParam "second")) 
     , ("energy", sendAsJson =<< computeEnergy <$> (doubleToRational <$> readParam "a") 
                                               <*> (doubleToRational <$> readParam "b") 
-                                              <*> jsonParam "profile" ) ] 
+                                              <*> jsonParam "profile" )
+    , ("randomProfile", sendAsJsonP =<< randomProfiles =<< readParam "n") ] 
   where
     doubleToRational :: Double -> Rational
     doubleToRational = toRational
+
+randomProfiles :: Int -> Snap [Profile]
+randomProfiles n = pick $ replicateM n prof
+  where
+    prof :: Rand Profile
+    prof = do
+        a <- ratInRange (0, 50)
+        b <- ratInRange (0, 50)
+        i <- inRange (3, 15)
+        pts <- replicateM i pt
+        let Just p = mkProfile ((0, a):(3600, b):pts)
+        return p
+
+    pt :: Rand (Second, Watt)
+    pt = (,) <$> ratInRange (0, 3600) <*> ratInRange (0, 50)
+
+    ratInRange :: (Int, Int) -> Rand Rational
+    ratInRange r = toRational <$> inRange r
 
 -- | Responds immediately with specified code and message.
 respondWith :: Int -> BS.ByteString -> Snap a
@@ -65,6 +90,16 @@ jsonParam param = requireParam param >>= getFromJson
         case decode $ LBS.fromChunks [b] of
             Just x  -> return x
             Nothing -> respondWith 400 $ "Parameter " <> param <> " not valid."
+
+sendAsJsonP :: ToJSON a => a -> Snap b
+sendAsJsonP x = do
+    cb <- requireParam "callback"
+    modifyResponse $ setContentType "application/javascript"
+    writeBS $ cb <> "("
+    writeLBS $ encode x
+    writeBS $ ")"
+    r <- getResponse
+    finishWith r
 
 -- | Sends immediately a value, encoded in JSON.
 sendAsJson :: ToJSON a => a -> Snap b
