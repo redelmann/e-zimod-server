@@ -2,9 +2,12 @@
 module Model.Profile
     ( Profile
     , mkProfile
+    , unsafeMkProfile
     , peekr
     , peekl
+    , transitionTo
     , computeEnergy
+    , getList
     , constant
     , square
     , serialize
@@ -14,9 +17,9 @@ module Model.Profile
 import Data.Ord
 import Data.Aeson
 import Data.List (sortBy)
-import Data.Maybe (fromJust)
 import Control.Monad (mzero)
 import Control.Applicative
+import Control.Arrow (first)
 
 import Model.Types
 
@@ -35,6 +38,9 @@ instance FromJSON Profile where
 instance ToJSON Profile where
     toJSON (Profile xs) = toJSON xs
 
+getList :: Profile -> [(Second, Watt)]
+getList (Profile xs) = xs
+
 {- | Profile constructor.
      Garantees that the list of events is non empty and sorted. -}
 mkProfile :: [(Second, Watt)] -> Maybe Profile
@@ -49,7 +55,17 @@ mkProfile xs = Just $ Profile $ clean $ sortBy (comparing fst) xs
     clean [] = []
 
 unsafeMkProfile :: [(Second, Watt)] -> Profile
-unsafeMkProfile = fromJust . mkProfile
+unsafeMkProfile = Profile
+
+transitionTo :: Profile -> Profile -> Second -> Second -> Profile
+transitionTo pa@(Profile as) (Profile bs) t dt = Profile ys
+  where
+    as' = takeWhile ((< t) . fst) as
+    w   = peekl pa t
+    t'  = t + dt
+    bs' = map (first (+ t')) bs
+    ys  = as' ++ (t, w) : bs'
+
 
 -- | Evaluates a profile at a given time. Takes the limit coming from the right.
 peekr :: Profile -> Second -> Watt
@@ -89,11 +105,11 @@ computeEnergy a b p@(Profile xs) = snd $ foldr f ((b, peekl p b), 0) $
 
 -- | Constant profile.
 constant :: Watt -> Profile
-constant w = unsafeMkProfile [(0, w)]
+constant w = Profile [(0, w)]
 
 -- | Square profile.
 square :: Watt -> Second -> Watt -> Second -> Profile
-square w1 dt1 w2 dt2 = unsafeMkProfile
+square w1 dt1 w2 dt2 = Profile
     [(0, w1), (dt1, w1), (dt1, w2), (dt1 + dt2, w2)]
 
 serialize :: Profile -> String
