@@ -26,7 +26,8 @@ executable e-zimod
                    snap,
                    aeson,
                    bytestring,
-                   rand-vars
+                   rand-vars,
+                   HDBC-sqlite3
 
 test-suite test-model
   type:            exitcode-stdio-1.0
