@@ -11,7 +11,7 @@ module Model.Machine
 import Control.Monad (mzero)
 import Control.Applicative
 import Control.Arrow (first)
-import Data.List (find)
+import Data.List (find, foldl')
 import Data.Aeson
 
 import Model.Types
@@ -71,7 +71,7 @@ computeProfile :: MachineDescription
 computeProfile md is [] = uncycle <$> lookup is (behavior md)
 computeProfile md is xs = do
     ip <- uncycle <$> lookup is (behavior md)
-    snd <$> foldl f (Just (is, ip)) xs
+    snd <$> foldl' f (Just (is, ip)) xs
   where
     f :: Maybe (State, Profile) -> (Second, State) -> Maybe (State, Profile)
     f Nothing _ = Nothing

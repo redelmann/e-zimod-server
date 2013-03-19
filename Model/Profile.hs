@@ -4,6 +4,7 @@ module Model.Profile
     , unsafeMkProfile
     , peekr
     , peekl
+    , upTo
     , transitionTo
     , computeEnergy
     , getList
@@ -56,14 +57,19 @@ mkProfile xs = Just $ Profile $ clean $ sortBy (comparing fst) xs
 unsafeMkProfile :: [(Second, Watt)] -> Profile
 unsafeMkProfile = Profile
 
-transitionTo :: Profile -> Profile -> Second -> Second -> Profile
-transitionTo pa@(Profile as) (Profile bs) t dt = Profile ys
+upTo :: Profile -> Second -> Profile
+upTo pa@(Profile as) t = Profile $ as' ++ [(t, w)]
   where
     as' = takeWhile ((< t) . fst) as
     w   = peekl pa t
+
+transitionTo :: Profile -> Profile -> Second -> Second -> Profile
+transitionTo pa (Profile bs) t dt = Profile ys
+  where
+    Profile as' = pa `upTo` t
     t'  = t + dt
     bs' = map (first (+ t')) bs
-    ys  = as' ++ (t, w) : bs'
+    ys  = as' ++ bs'
 
 
 -- | Evaluates a profile at a given time. Takes the limit coming from the right.

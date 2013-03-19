@@ -5,14 +5,15 @@ module Main (main) where
 import Snap
 import Data.Monoid
 import Data.Aeson
+import Data.List (sort)
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Random
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as LBS
 
-import Model.Profile
-import Model.Types
+import Data.Profiles
+import Model
 
 instance RandPicker Snap where
     pick = liftIO . pick
@@ -32,10 +33,20 @@ site = route
         <$> (doubleToRational <$> readParam "a")
         <*> (doubleToRational <$> readParam "b")
         <*> jsonParam "profile" )
-    , ("randomProfile", sendAsJsonP =<< randomProfiles =<< readParam "n") ]
+    , ("randomProfile", sendAsJsonP =<< randomProfiles =<< readParam "n") 
+    , ("fridge", sendAsJsonP =<< getFridgeProfile) ]
   where
     doubleToRational :: Double -> Rational
     doubleToRational = toRational
+
+getFridgeProfile :: Snap Profile
+getFridgeProfile = do
+    ts <- jsonParam "times" :: Snap [Double]
+    let ts' = sort $ map toRational ts
+    let es  = zip ts' $ cycle ["Off", "On"]
+    n <- readParam "upto" :: Snap Int
+    let Just p = computeProfile fridge "On" es
+    return $ p `upTo` (toRational n)
 
 -- | Computes `n` random profiles.
 randomProfiles :: Int -> Snap [Profile]
