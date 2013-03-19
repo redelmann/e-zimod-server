@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Main(main) where
+module Main (main) where
 
 import Snap
 import Data.Monoid
@@ -23,18 +23,21 @@ main = quickHttpServe site
 
 -- | Main site.
 site :: Snap ()
-site = route 
+site = route
     -- Some small examples.
-    [ ("peek",  sendAsJson =<< peekl <$> jsonParam "profile" 
-                                     <*> (doubleToRational <$> readParam "second")) 
-    , ("energy", sendAsJson =<< computeEnergy <$> (doubleToRational <$> readParam "a") 
-                                              <*> (doubleToRational <$> readParam "b") 
-                                              <*> jsonParam "profile" )
-    , ("randomProfile", sendAsJsonP =<< randomProfiles =<< readParam "n") ] 
+    [ ("peek",  sendAsJson =<< peekl
+        <$> jsonParam "profile"
+        <*> (doubleToRational <$> readParam "second"))
+    , ("energy", sendAsJson =<< computeEnergy
+        <$> (doubleToRational <$> readParam "a")
+        <*> (doubleToRational <$> readParam "b")
+        <*> jsonParam "profile" )
+    , ("randomProfile", sendAsJsonP =<< randomProfiles =<< readParam "n") ]
   where
     doubleToRational :: Double -> Rational
     doubleToRational = toRational
 
+-- | Computes `n` random profiles.
 randomProfiles :: Int -> Snap [Profile]
 randomProfiles n = pick $ replicateM n prof
   where
@@ -42,9 +45,9 @@ randomProfiles n = pick $ replicateM n prof
     prof = do
         a <- ratInRange (0, 50)
         b <- ratInRange (0, 50)
-        i <- inRange (3, 15)
+        i <- inRange (2, 4)
         pts <- replicateM i pt
-        let Just p = mkProfile ((0, a):(3600, b):pts)
+        let Just p = mkProfile ((0, a) : (3600, b) : pts)
         return p
 
     pt :: Rand (Second, Watt)
@@ -61,8 +64,8 @@ respondWith c b = do
     r <- getResponse
     finishWith r
 
--- | Requires a parameter, 
---   immediately responding an appropriate message if not present.
+{- | Requires a parameter,
+     immediately responding an appropriate message if not present. -}
 requireParam :: BS.ByteString -> Snap BS.ByteString
 requireParam param = do
     mReq <- getParam param
@@ -70,8 +73,8 @@ requireParam param = do
         Just req -> return req
         Nothing  -> respondWith 400 $ "Parameter " <> param <> " not specified."
 
--- | Reads a parameter,
---   immediately responding an appropriate message if not present or not valid.
+{- | Reads a parameter, immediately responding
+     an appropriate message if not present or not valid. -}
 readParam :: Read a => BS.ByteString -> Snap a
 readParam param = requireParam param >>= getRead
   where
@@ -80,24 +83,24 @@ readParam param = requireParam param >>= getRead
         [(v, "")] -> return v
         _         -> respondWith 400 $ "Parameter " <> param <> " not valid."
 
--- | Reads a parameter encoded via JSON,
---   immediately responding an appropriate message if not present or not valid.
+{- | Reads a parameter encoded via JSON, immediately responding
+     an appropriate message if not present or not valid. -}
 jsonParam :: FromJSON a => BS.ByteString -> Snap a
 jsonParam param = requireParam param >>= getFromJson
   where
     getFromJson :: FromJSON a => BS.ByteString -> Snap a
-    getFromJson b = do
-        case decode $ LBS.fromChunks [b] of
-            Just x  -> return x
-            Nothing -> respondWith 400 $ "Parameter " <> param <> " not valid."
+    getFromJson b = case decode $ LBS.fromChunks [b] of
+        Just x  -> return x
+        Nothing -> respondWith 400 $ "Parameter " <> param <> " not valid."
 
+-- | Sends immediately a value, encoded in JSONP.
 sendAsJsonP :: ToJSON a => a -> Snap b
 sendAsJsonP x = do
     cb <- requireParam "callback"
     modifyResponse $ setContentType "application/javascript"
     writeBS $ cb <> "("
     writeLBS $ encode x
-    writeBS $ ")"
+    writeBS ")"
     r <- getResponse
     finishWith r
 
