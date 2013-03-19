@@ -1,4 +1,4 @@
 module Settings where
 
-	databaseName :: String
-	databaseName = "test.db"
+    databaseName :: String
+    databaseName = "test.db"

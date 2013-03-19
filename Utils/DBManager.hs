@@ -10,7 +10,7 @@ import Database.HDBC.Sqlite3
 
 import Model.Profile
 
-{- Excutes an action on a given database. -}
+-- | Excutes an action on a given database.
 withDataBase :: String -> (Connection -> IO a) -> IO a
 withDataBase dbname action = do
     c <- initConn dbname
@@ -37,7 +37,8 @@ initConn = connectSqlite3
 -- | Adds a Profile with the given id.
 addProfile :: Connection -> Integer -> Profile -> IO Bool
 addProfile c i p = do
-    n <- run c "INSERT INTO profiles VALUES (?, ?)" [toSql i, toSql $ serialize p]
+    n <- run c "INSERT INTO profiles VALUES (?, ?)"
+        [toSql i, toSql $ serialize p]
     return (n > 0)
 
 -- | Recovers a Profile from a given id.
