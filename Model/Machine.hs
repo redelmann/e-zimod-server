@@ -40,8 +40,8 @@ uncycle (Repeat p) = unsafeMkProfile ys
 
 
 computeProfile :: MachineDescription
-               -> State 
-               -> [(Second, State)] 
+               -> State
+               -> [(Second, State)]
                -> Maybe Profile
 computeProfile md is [] = uncycle <$> lookup is (behavior md)
 computeProfile md is xs = do
