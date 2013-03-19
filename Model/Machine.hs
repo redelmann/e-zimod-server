@@ -1,30 +1,21 @@
 
 module Model.Machine
     ( MachineDescription (..)
-    , MachineConfiguration (..)
+    , Cyclic (..)
     , State
-    , Event
-    , TimedEvent
     ) where
 
 import Model.Types
 import Model.Profile
 
-type Event = String
 type State = String
-type TimedEvent = (Second, Event)
 
-data MachineConfiguration = MachineConfiguration
-    { state    :: State    -- ^ Current state of the machine
-    , behavior :: Profile  -- ^ Consumption profile in this configuration
-    }
-
+data Cyclic a = Repeat a
+              | Once a
+              deriving (Show, Eq, Read)
 
 data MachineDescription = MachineDescription
-    { name       :: String  -- ^ Name of the machine
-    , category   :: String  -- ^ Type of machine
-    , transition :: TimedEvent  -- ^ Trigger event of the transition
-                 -> MachineConfiguration
-                 -- ^ Configuration when the event triggered
-                 -> Maybe MachineConfiguration -- ^ Resulting configuration
-    }
+    { name        :: String  -- ^ Name of the machine
+    , behavior    :: [(State, Cyclic Profile)]
+    , transitions :: [(State, State, Second)]
+    } deriving (Show, Eq, Read)

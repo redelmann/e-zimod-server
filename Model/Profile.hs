@@ -5,6 +5,8 @@ module Model.Profile
     , peekr
     , peekl
     , computeEnergy
+    , constant
+    , square
     , serialize
     , deserialize
     ) where
@@ -12,6 +14,7 @@ module Model.Profile
 import Data.Ord
 import Data.Aeson
 import Data.List (sortBy)
+import Data.Maybe (fromJust)
 import Control.Monad (mzero)
 import Control.Applicative
 
@@ -44,6 +47,9 @@ mkProfile xs = Just $ Profile $ clean $ sortBy (comparing fst) xs
         | t1 == t2 = clean $ (t1, v2) : (t2, v2) : tvs
     clean (tv : tvs) = tv : clean tvs
     clean [] = []
+
+unsafeMkProfile :: [(Second, Watt)] -> Profile
+unsafeMkProfile = fromJust . mkProfile
 
 -- | Evaluates a profile at a given time. Takes the limit coming from the right.
 peekr :: Profile -> Second -> Watt
@@ -81,6 +87,14 @@ computeEnergy a b p@(Profile xs) = snd $ foldr f ((b, peekl p b), 0) $
     f :: (Second, Watt) -> ((Second, Watt), Joule) -> ((Second, Watt), Joule)
     f (t1, v1) ((t2, v2), j) = ((t1, v1), j + (t2 - t1) * (v1 + v2) / 2)
 
+-- | Constant profile.
+constant :: Watt -> Profile
+constant w = unsafeMkProfile [(0, w)]
+
+-- | Square profile.
+square :: Watt -> Second -> Watt -> Second -> Profile
+square w1 dt1 w2 dt2 = unsafeMkProfile
+    [(0, w1), (dt1, w1), (dt1, w2), (dt1 + dt2, w2)]
 
 serialize :: Profile -> String
 serialize = show
