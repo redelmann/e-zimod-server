@@ -1,9 +1,0 @@
-pour la db, sqlite tout joli:
-hdbc-sqlite3
-examples : http://book.realworldhaskell.org/read/using-databases.html
-
-
-Question:
-Comment on reprenste dans la DB:
-- une machine
-- un profile d'utilisation
