@@ -7,7 +7,7 @@ import Model.Types
 import Model.Machine
 import Model.Profile
 
-computeProfile :: MachineDescription   -- ^ The machine on which to apply the events
+computeProfile :: MachineDescription   -- ^ The machine on which events apply
                -> MachineConfiguration -- ^ Initial machine configuration
                -> [TimedEvent]         -- ^ List of events
                -> Maybe Profile        -- ^ Resulting consumption profile

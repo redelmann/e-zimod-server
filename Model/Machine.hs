@@ -1,7 +1,7 @@
 
 module Model.Machine
-    ( MachineDescription(..)
-    , MachineConfiguration(..)
+    ( MachineDescription (..)
+    , MachineConfiguration (..)
     , State
     , Event
     , TimedEvent
@@ -24,6 +24,7 @@ data MachineDescription = MachineDescription
     { name       :: String  -- ^ Name of the machine
     , category   :: String  -- ^ Type of machine
     , transition :: TimedEvent  -- ^ Trigger event of the transition
-                 -> MachineConfiguration  -- ^ Configuration when the event triggered
+                 -> MachineConfiguration
+                 -- ^ Configuration when the event triggered
                  -> Maybe MachineConfiguration -- ^ Resulting configuration
     }
