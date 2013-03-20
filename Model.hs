@@ -1,5 +1,10 @@
-module Model ( module Model ) where
+-- | This modules re-exports all modules relevant to modeling machines.
+module Model
+    ( module Model.Machine
+    , module Model.Profile
+    , module Model.Types
+    ) where
 
-import Model.Machine as Model
-import Model.Types as Model
-import Model.Profile as Model
+import Model.Machine
+import Model.Profile
+import Model.Types

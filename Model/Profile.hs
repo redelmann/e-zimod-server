@@ -1,17 +1,23 @@
+-- | This modules defines `Profile`s, which are power over time graphs.
 module Model.Profile
     ( Profile
+    -- * Smart constructors
     , mkProfile
-    , unsafeMkProfile
-    , peekr
-    , peekl
-    , upTo
-    , transitionTo
-    , computeEnergy
-    , getList
     , constant
     , square
+    -- * Transformations
+    , upTo
+    , transitionTo
+    -- * Computations
+    , peekr
+    , peekl
+    , computeEnergy
+    , getList
+    -- * Serialization
     , serialize
     , deserialize
+    -- * Unsafe
+    , unsafeMkProfile
     ) where
 
 import Data.Ord
@@ -38,6 +44,7 @@ instance FromJSON Profile where
 instance ToJSON Profile where
     toJSON (Profile xs) = toJSON xs
 
+-- | Returns the list of `(Second, Watt)` pairs defining this profile.
 getList :: Profile -> [(Second, Watt)]
 getList (Profile xs) = xs
 
@@ -54,15 +61,24 @@ mkProfile xs = Just $ Profile $ clean $ sortBy (comparing fst) xs
     clean (tv : tvs) = tv : clean tvs
     clean [] = []
 
+{- | Builds a profile without checking if the list of elements is non-null,
+     nor if the elements are sorted. -}
 unsafeMkProfile :: [(Second, Watt)] -> Profile
 unsafeMkProfile = Profile
 
+-- | Returns a profile equivalent up to a certain time and constant afterwards.
 upTo :: Profile -> Second -> Profile
 upTo pa@(Profile as) t = Profile $ as' ++ [(t, w)]
   where
     as' = takeWhile ((< t) . fst) as
     w   = peekl pa t
 
+{- | Combines two profiles.
+
+     The resulting profile is equivalent to the first before the specified time,
+     and then, after some specified delay, to the second profile.
+
+     During the delay, a linear transition between the two profiles. -}
 transitionTo :: Profile -> Profile -> Second -> Second -> Profile
 transitionTo pa (Profile bs) t dt = Profile ys
   where
@@ -117,8 +133,10 @@ square :: Watt -> Second -> Watt -> Second -> Profile
 square w1 dt1 w2 dt2 = Profile
     [(0, w1), (dt1, w1), (dt1, w2), (dt1 + dt2, w2)]
 
+-- | Serializes a profile, for use in the database.
 serialize :: Profile -> String
 serialize = show
 
+-- | Deserializes a profile from a string.
 deserialize :: String -> Profile
 deserialize = read
