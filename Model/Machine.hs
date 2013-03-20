@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 
 module Model.Machine
     ( MachineDescription (..)
@@ -7,9 +8,11 @@ module Model.Machine
     , uncycle
     ) where
 
-import Control.Applicative ((<$>))
+import Control.Monad (mzero)
+import Control.Applicative
 import Control.Arrow (first)
-import Data.List (find)
+import Data.List (find, foldl')
+import Data.Aeson
 
 import Model.Types
 import Model.Profile
@@ -20,6 +23,17 @@ data Cyclic a = Repeat a
               | Once a
               deriving (Show, Eq, Read)
 
+instance ToJSON a => ToJSON (Cyclic a) where
+    toJSON (Once x)   = object ["cyclic" .= False, "data" .= x]
+    toJSON (Repeat x) = object ["cyclic" .= True,  "data" .= x]
+
+instance FromJSON a => FromJSON (Cyclic a) where
+    parseJSON (Object v) = do
+        c <- v .: "cyclic"
+        d <- v .: "data"
+        return $ if c then Once d else Repeat d
+    parseJSON _ = mzero
+
 instance Functor Cyclic where
     fmap f (Once x) = Once (f x)
     fmap f (Repeat x) = Repeat (f x)
@@ -29,6 +43,17 @@ data MachineDescription = MachineDescription
     , behavior    :: [(State, Cyclic Profile)]
     , transitions :: [(State, State, Second)]
     } deriving (Show, Eq, Read)
+
+instance FromJSON MachineDescription where
+    parseJSON (Object v) = MachineDescription
+        <$> v .: "name"
+        <*> v .: "behavior"
+        <*> v .: "transitions"
+    parseJSON _ = mzero
+
+instance ToJSON MachineDescription where
+    toJSON (MachineDescription n b t) =
+        object ["name" .= n, "behavior" .= b, "transitions" .= t]
 
 uncycle :: Cyclic Profile -> Profile
 uncycle (Once p) = p
@@ -46,7 +71,7 @@ computeProfile :: MachineDescription
 computeProfile md is [] = uncycle <$> lookup is (behavior md)
 computeProfile md is xs = do
     ip <- uncycle <$> lookup is (behavior md)
-    snd <$> foldl f (Just (is, ip)) xs
+    snd <$> foldl' f (Just (is, ip)) xs
   where
     f :: Maybe (State, Profile) -> (Second, State) -> Maybe (State, Profile)
     f Nothing _ = Nothing
