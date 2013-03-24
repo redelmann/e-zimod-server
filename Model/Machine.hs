@@ -94,11 +94,11 @@ instance FromJSON a => FromJSON (Cyclic a) where
 -- | Computes the infinite profile corresponding to this cyclic profile.
 uncycle :: Cyclic Profile -> Profile
 uncycle (Once p) = p
-uncycle (Repeat p) = unsafeMkProfile ys
+uncycle (Repeat p) = p'
   where
     xs = getList p
-    ys = xs ++ map (first (+ lx)) ys
-    lx = fst $ last xs
+    t = fst $ last xs
+    p' = p `combine` defer p' t
 
 instance Functor Cyclic where
     fmap f (Once x) = Once (f x)

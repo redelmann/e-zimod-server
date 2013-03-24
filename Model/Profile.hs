@@ -20,8 +20,6 @@ module Model.Profile
     -- * Serialization
     , serialize
     , deserialize
-    -- * Unsafe
-    , unsafeMkProfile
     ) where
 
 import Data.Ord
@@ -51,15 +49,20 @@ instance FromJSON Profile where
 instance ToJSON Profile where
     toJSON (Profile xs) = toJSON xs
 
--- | Returns the list of `(Second, Watt)` pairs defining this profile.
-getList :: Profile -> [(Second, Watt)]
-getList (Profile xs) = xs
-
 {- | Profile constructor.
      Garantees that the list of events is non empty and sorted. -}
 mkProfile :: [(Second, Watt)] -> Maybe Profile
 mkProfile [] = Nothing
 mkProfile xs = Just $ clean $ Profile $ sortBy (comparing fst) xs
+
+-- | Constant profile.
+constant :: Watt -> Profile
+constant w = Profile [(0, w)]
+
+-- | Square profile.
+square :: Watt -> Second -> Watt -> Second -> Profile
+square w1 dt1 w2 dt2 = Profile
+    [(0, w1), (dt1, w1), (dt1, w2), (dt1 + dt2, w2)]
 
 -- | Removes useless points.
 clean :: Profile -> Profile
@@ -74,11 +77,6 @@ clean (Profile xs) = Profile $ cleanSameWatt $ cleanSameTime xs
         | v1 == v2 && v2 == v3 = cleanSameWatt $ (t1, v1) : (t3, v3) : tvs
     cleanSameWatt (tv : tvs) = tv : cleanSameWatt tvs
     cleanSameWatt [] = []
-
-{- | Builds a profile without checking if the list of elements is non-null,
-     nor if the elements are sorted. -}
-unsafeMkProfile :: [(Second, Watt)] -> Profile
-unsafeMkProfile = Profile
 
 {- | Splits a profile in two, the first one being equivalent
      to the original upto time `t`, and the second one being equivalent to
@@ -150,14 +148,9 @@ computeEnergy a b p@(Profile xs) = snd $ foldr f ((b, peekl p b), 0) $
     f :: (Second, Watt) -> ((Second, Watt), Joule) -> ((Second, Watt), Joule)
     f (t1, v1) ((t2, v2), j) = ((t1, v1), j + (t2 - t1) * (v1 + v2) / 2)
 
--- | Constant profile.
-constant :: Watt -> Profile
-constant w = Profile [(0, w)]
-
--- | Square profile.
-square :: Watt -> Second -> Watt -> Second -> Profile
-square w1 dt1 w2 dt2 = Profile
-    [(0, w1), (dt1, w1), (dt1, w2), (dt1 + dt2, w2)]
+-- | Returns the list of `(Second, Watt)` pairs defining this profile.
+getList :: Profile -> [(Second, Watt)]
+getList (Profile xs) = xs
 
 -- | Serializes a profile, for use in the database.
 serialize :: Profile -> String
