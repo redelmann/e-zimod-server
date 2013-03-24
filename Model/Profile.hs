@@ -7,9 +7,9 @@ module Model.Profile
     , square
     -- * Transformations
     , split
-    , combine
+    , andThen
     , upTo
-    , defer
+    , deferedBy
     , clean
     -- * Computations
     , peek
@@ -94,8 +94,8 @@ split p@(Profile xs) t = (Profile as, Profile bs)
      All points of the first profile must be
      before the first point of the second profile.
      This condition is not checked. -}
-combine :: Profile -> Profile -> Profile
-combine (Profile xs) (Profile ys) = Profile $ xs ++ ys
+andThen :: Profile -> Profile -> Profile
+andThen (Profile xs) (Profile ys) = Profile $ xs ++ ys
 
 -- | Returns a profile equivalent up to a certain time and constant afterwards.
 upTo :: Profile -> Second -> Profile
@@ -105,8 +105,8 @@ upTo pa@(Profile as) t = Profile $ as' ++ [(t, w)]
     w   = peekl pa t
 
 -- | Defers a profile by some time.
-defer :: Profile -> Second -> Profile
-defer (Profile xs) t = Profile $ map (first (+ t)) xs
+deferedBy :: Profile -> Second -> Profile
+deferedBy (Profile xs) t = Profile $ map (first (+ t)) xs
 
 -- | Evaluates a profile at a given time. Returns the left and right limits.
 peek :: Profile -> Second -> (Watt, Watt)

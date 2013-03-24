@@ -54,7 +54,7 @@ computeProfile :: MachineDescription  -- ^ The machine
                -> Maybe Profile
 computeProfile md is xs = do
     ip <- uncycle <$> lookup is (behavior md)
-    (clean . foldr1 combine . reverse . snd) <$> foldl' f (Just (is, [ip])) xs
+    (clean . foldr1 andThen . reverse . snd) <$> foldl' f (Just (is, [ip])) xs
   where
     f :: Maybe (State, [Profile])
       -> (Second, State)
@@ -70,7 +70,7 @@ computeProfile md is xs = do
         -- Uncycling the behavior.
         let pb = uncycle cp
         -- Returning the new states along with the new profiles.
-        return (s2, defer pb (t + dt) : pa : ps)
+        return (s2, pb `deferedBy` (t + dt) : pa : ps)
 
 {- | Represents possibly cyclic elements.
 
@@ -98,7 +98,7 @@ uncycle (Repeat p) = p'
   where
     xs = getList p
     t = fst $ last xs
-    p' = p `combine` defer p' t
+    p' = p `andThen` (p' `deferedBy` t)
 
 instance Functor Cyclic where
     fmap f (Once x) = Once (f x)
