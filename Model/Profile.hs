@@ -33,9 +33,12 @@ import Control.Arrow (first, (&&&))
 
 import Model.Types
 
--- | Power profile. Determines the power at some given time.
-data Profile = Profile [(Second, Watt)]  {- Non empty,
-                                            sorted by increasing second -}
+{- | Power profile. Determines the power at some given time.
+
+     The power between two points is set to be linear,
+     and at both ends to be constant. -}
+newtype Profile = Profile [(Second, Watt)]
+               -- ^ Non empty, sorted by increasing second
                deriving (Show, Read, Eq)
 
 instance FromJSON Profile where
