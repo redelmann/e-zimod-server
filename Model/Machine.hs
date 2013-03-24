@@ -70,7 +70,7 @@ computeProfile md is xs = do
         -- Uncycling the behavior.
         let pb = uncycle cp
         -- Returning the new states along with the new profiles.
-        return (s2, pb `deferedBy` (t + dt) : pa : ps)
+        return (s2, pb `deferredBy` (t + dt) : pa : ps)
 
 {- | Represents possibly cyclic elements.
 
@@ -98,7 +98,7 @@ uncycle (Repeat p) = p'
   where
     xs = getList p
     t = fst $ last xs
-    p' = p `andThen` (p' `deferedBy` t)
+    p' = p `andThen` (p' `deferredBy` t)
 
 instance Functor Cyclic where
     fmap f (Once x) = Once (f x)

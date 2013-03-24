@@ -9,7 +9,7 @@ module Model.Profile
     , split
     , andThen
     , upTo
-    , deferedBy
+    , deferredBy
     , clean
     -- * Computations
     , peek
@@ -105,8 +105,8 @@ upTo pa@(Profile as) t = Profile $ as' ++ [(t, w)]
     w   = peekl pa t
 
 -- | Defers a profile by some time.
-deferedBy :: Profile -> Second -> Profile
-deferedBy (Profile xs) t = Profile $ map (first (+ t)) xs
+deferredBy :: Profile -> Second -> Profile
+deferredBy (Profile xs) t = Profile $ map (first (+ t)) xs
 
 -- | Evaluates a profile at a given time. Returns the left and right limits.
 peek :: Profile -> Second -> (Watt, Watt)
@@ -137,7 +137,7 @@ peekl (Profile xs) t = peek' xs
         | otherwise = peek' rs
 
 -- | Computes energy of a profile within a time period.
-computeEnergy :: Rational -> Rational -> Profile -> Joule
+computeEnergy :: Second -> Second -> Profile -> Joule
 computeEnergy a b _ | b <= a = 0
 computeEnergy a b p@(Profile xs) = snd $ foldr f ((b, peekl p b), 0) $
     (a, peekr p a) : ys
