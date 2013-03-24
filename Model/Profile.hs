@@ -6,9 +6,13 @@ module Model.Profile
     , constant
     , square
     -- * Transformations
+    , split
+    , combine
     , upTo
-    , transitionTo
+    , defer
+    , clean
     -- * Computations
+    , peek
     , peekr
     , peekl
     , computeEnergy
@@ -25,7 +29,7 @@ import Data.Aeson
 import Data.List (sortBy)
 import Control.Monad (mzero)
 import Control.Applicative
-import Control.Arrow (first)
+import Control.Arrow (first, (&&&))
 
 import Model.Types
 
@@ -52,19 +56,45 @@ getList (Profile xs) = xs
      Garantees that the list of events is non empty and sorted. -}
 mkProfile :: [(Second, Watt)] -> Maybe Profile
 mkProfile [] = Nothing
-mkProfile xs = Just $ Profile $ clean $ sortBy (comparing fst) xs
+mkProfile xs = Just $ clean $ Profile $ sortBy (comparing fst) xs
+
+-- | Removes useless points.
+clean :: Profile -> Profile
+clean (Profile xs) = Profile $ cleanSameWatt $ cleanSameTime xs
   where
-    {- Removes elements occuring between two elements occuring at the same time,
-       only keeping right and left limits. -}
-    clean ((t1, v1) : (_, _) : (t2, v2) : tvs)
-        | t1 == t2 = clean $ (t1, v2) : (t2, v2) : tvs
-    clean (tv : tvs) = tv : clean tvs
-    clean [] = []
+    cleanSameTime ((t1, v1) : (_, _) : (t2, v2) : tvs)
+        | t1 == t2 = cleanSameTime $ (t1, v2) : (t2, v2) : tvs
+    cleanSameTime (tv : tvs) = tv : cleanSameTime tvs
+    cleanSameTime [] = []
+
+    cleanSameWatt ((t1, v1) : (_, v2) : (t3, v3) : tvs)
+        | v1 == v2 && v2 == v3 = cleanSameWatt $ (t1, v1) : (t3, v3) : tvs
+    cleanSameWatt (tv : tvs) = tv : cleanSameWatt tvs
+    cleanSameWatt [] = []
 
 {- | Builds a profile without checking if the list of elements is non-null,
      nor if the elements are sorted. -}
 unsafeMkProfile :: [(Second, Watt)] -> Profile
 unsafeMkProfile = Profile
+
+{- | Splits a profile in two, the first one being equivalent
+     to the original upto time `t`, and the second one being equivalent to
+     the original profile from time `t`. -}
+split :: Profile -> Second -> (Profile, Profile)
+split p@(Profile xs) t = (Profile as, Profile bs)
+  where
+    (as', bs') = break ((>= t) . fst) xs
+    (a', b')   = peek p t
+    as         = as' ++ [(t, a')]
+    bs         = (t, b') : bs'
+
+{- | Combines the points of two profiles.
+
+     All points of the first profile must be
+     before the first point of the second profile.
+     This condition is not checked. -}
+combine :: Profile -> Profile -> Profile
+combine (Profile xs) (Profile ys) = Profile $ xs ++ ys
 
 -- | Returns a profile equivalent up to a certain time and constant afterwards.
 upTo :: Profile -> Second -> Profile
@@ -73,20 +103,13 @@ upTo pa@(Profile as) t = Profile $ as' ++ [(t, w)]
     as' = takeWhile ((< t) . fst) as
     w   = peekl pa t
 
-{- | Combines two profiles.
+-- | Defers a profile by some time.
+defer :: Profile -> Second -> Profile
+defer (Profile xs) t = Profile $ map (first (+ t)) xs
 
-     The resulting profile is equivalent to the first before the specified time,
-     and then, after some specified delay, to the second profile.
-
-     During the delay, a linear transition between the two profiles. -}
-transitionTo :: Profile -> Profile -> Second -> Second -> Profile
-transitionTo pa (Profile bs) t dt = Profile ys
-  where
-    Profile as' = pa `upTo` t
-    t'  = t + dt
-    bs' = map (first (+ t')) bs
-    ys  = as' ++ bs'
-
+-- | Evaluates a profile at a given time. Returns the left and right limits.
+peek :: Profile -> Second -> (Watt, Watt)
+peek p = peekl p &&& peekr p
 
 -- | Evaluates a profile at a given time. Takes the limit coming from the right.
 peekr :: Profile -> Second -> Watt

@@ -54,15 +54,23 @@ computeProfile :: MachineDescription  -- ^ The machine
                -> Maybe Profile
 computeProfile md is xs = do
     ip <- uncycle <$> lookup is (behavior md)
-    snd <$> foldl' f (Just (is, ip)) xs
+    (clean . foldr1 combine . reverse . snd) <$> foldl' f (Just (is, [ip])) xs
   where
-    f :: Maybe (State, Profile) -> (Second, State) -> Maybe (State, Profile)
+    f :: Maybe (State, [Profile])
+      -> (Second, State)
+      -> Maybe (State, [Profile])
     f Nothing _ = Nothing
-    f (Just (s1, pa)) (t, s2) = do
+    f (Just (s1, p : ps)) (t, s2) = do
+        -- Trimming the last computed profile upto time t.
+        let pa = p `upTo` t
+        -- Getting transition time.
         (_, _, dt) <- find (\ (a, b, _) -> a == s1 && b == s2) (transitions md)
+        -- Getting behavior in new state.
         cp <- lookup s2 (behavior md)
+        -- Uncycling the behavior.
         let pb = uncycle cp
-        return (s2, transitionTo pa pb t dt)
+        -- Returning the new states along with the new profiles.
+        return (s2, defer pb (t + dt) : pa : ps)
 
 {- | Represents possibly cyclic elements.
 
