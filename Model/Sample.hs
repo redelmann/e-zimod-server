@@ -17,10 +17,13 @@ instance FromJSON Sample where
 	parseJSON = fmap Sample . parseJSON
 
 computeSample :: Second -> Profile -> Sample
-computeSample t p = Sample $ go p
+computeSample t p = Sample $ go 0 p
   where
-  	go :: Profile -> [Joule]
-  	go p' = x : go (n' `deferredBy` (-t))
+  	go :: Rational -> Profile -> [Joule]
+  	go i p' = x : go (i+1) n'
   	  where
-  	  	(n, n') = split p' t
-  	  	x       = computeEnergy 0 t n
+  	  	t0 = i * t
+  	  	t1 = t0 + t
+  	  	(n, n') = split p' t1
+  	  	x       = computeEnergy t0 t1 n
+
