@@ -1,6 +1,6 @@
 module Utils.DBManager
-    ( resetdb
-    , initconn
+    ( resetDB
+    , initConn
     , addProfile
     , getProfile
     ) where
@@ -9,6 +9,7 @@ import Database.HDBC
 import Database.HDBC.Sqlite3
 
 import Model.Profile
+import Utils.DBClass
 
 -- | Excutes an action on a given database.
 withDataBase :: String -> (Connection -> IO a) -> IO a

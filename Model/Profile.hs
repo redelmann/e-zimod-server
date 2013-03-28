@@ -17,9 +17,6 @@ module Model.Profile
     , peekl
     , computeEnergy
     , getList
-    -- * Serialization
-    , serialize
-    , deserialize
     ) where
 
 import Data.Ord
@@ -30,6 +27,7 @@ import Control.Applicative
 import Control.Arrow (first, (&&&))
 
 import Model.Types
+import Utils.DBClass
 
 {- | Power profile. Determines the power at some given time.
 
@@ -37,7 +35,13 @@ import Model.Types
      and at both ends to be constant. -}
 newtype Profile = Profile [(Second, Watt)]
                -- ^ Non empty, sorted by increasing second
-               deriving (Show, Read, Eq)
+               deriving (Read, Show, Eq)
+
+instance DBisable Profile where
+  -- | Serializes a profile, for use in the database.
+  serialize = show
+  -- | Deserializes a profile from a string.
+  deserialize = read
 
 instance FromJSON Profile where
     parseJSON json = do
@@ -151,11 +155,3 @@ computeEnergy a b p@(Profile xs) = snd $ foldr f ((b, peekl p b), 0) $
 -- | Returns the list of `(Second, Watt)` pairs defining this profile.
 getList :: Profile -> [(Second, Watt)]
 getList (Profile xs) = xs
-
--- | Serializes a profile, for use in the database.
-serialize :: Profile -> String
-serialize = show
-
--- | Deserializes a profile from a string.
-deserialize :: String -> Profile
-deserialize = read
