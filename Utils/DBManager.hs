@@ -10,6 +10,7 @@ import Database.HDBC.Sqlite3
 
 import Model.Profile
 import Utils.DBClass
+import Model.Machine
 
 -- | Excutes an action on a given database.
 withDataBase :: String -> (Connection -> IO a) -> IO a
@@ -34,31 +35,32 @@ resetDB c = do
 initConn :: String -> IO Connection
 initConn = connectSqlite3
 
-addInto :: Connection -> String -> Integer -> DBisable -> IO Bool
+addInto :: DBisable a => Connection -> String -> Integer -> a -> IO Bool
 addInto c table i input = do
-    n <- run c "INSERT INTO " ++ table ++ " VALUES (?, ?)"
+    n <- run c ("INSERT INTO " ++ table ++ " VALUES (?, ?)")
            [toSql i, toSql $ serialize input]
     return (n > 0)
 
-getForm :: Connection -> String -> Integer -> IO a
+getForm :: DBisable a => Connection -> String -> Integer -> IO a
 getForm c table i = do
-    q <- quickQuery c "SELECT value FROM " ++ table ++  " where id = ?" [toSql i]
+    q <- quickQuery c ("SELECT value FROM " ++ table ++  " where id = ?")
+           [toSql i]
     return $ extract q
     where
-      extract :: [[SqlValue]] -> Maybe Profile
+      extract :: DBisable a => [[SqlValue]] -> a
       extract [[v]] = deserialize $ fromSql v
 
 -- | Adds a Profile with the given id.
 addProfile :: Connection -> Integer -> Cyclic Profile -> IO Bool
-addProfile c i cp = addInto c "profiles" i cp
+addProfile c = addInto c "profiles"
 
 -- | Recovers a Profile from a given id.
-getProfile :: Connection -> Integer -> IO (Maybe Cyclic Profile)
+getProfile :: Connection -> Integer -> IO (Maybe (Cyclic Profile))
 getProfile c i = do
     q <- quickQuery c "SELECT value FROM profiles where id = ?" [toSql i]
     return $ extract q
     where
-      extract :: [[SqlValue]] -> Maybe Profile
+      extract :: [[SqlValue]] -> Maybe (Cyclic Profile)
       extract [[v]] = case reads $ fromSql v of
         [(cp, "")] -> Just cp
         _         -> Nothing

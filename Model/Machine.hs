@@ -82,11 +82,13 @@ data Cyclic a = Repeat a  -- ^ The element is repeated ad infinitum
               deriving (Show, Eq, Read)
 
 instance DBisable a => DBisable (Cyclic a) where
-    serialize (Once x) = "O," ++ serialize x 
+    serialize (Once x) = "O," ++ serialize x
     serialize (Repeat x) = "R," ++ serialize x
     deserialize str | "O," `isPrefixOf` str = Once (deserialize str)
                     | "R," `isPrefixOf` str = Repeat (deserialize str)
-                    | otherwise = error $ "String ''" ++ str ++ "'' cannot be view as Cyclic object "
+                    | otherwise = error $ "String ''" ++
+                                          str ++
+                                          "'' cannot be view as Cyclic object "
 
 instance ToJSON a => ToJSON (Cyclic a) where
     toJSON (Once x)   = object ["cyclic" .= False, "data" .= x]

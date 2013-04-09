@@ -19,7 +19,7 @@ computeSample :: Second -> Profile -> Sample
 computeSample t p = Sample $ go 0 p
   where
     go :: Rational -> Profile -> [Joule]
-    go i p' = x : go (i+1) n'
+    go i p' = x : go (i + 1) n'
       where
         t0 = i * t
         t1 = t0 + t

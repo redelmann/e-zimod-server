@@ -1,4 +1,4 @@
-module Utils.DBClass where 
+module Utils.DBClass where
 
 class DBisable a where
   serialize :: a -> String
