@@ -34,22 +34,32 @@ resetDB c = do
 initConn :: String -> IO Connection
 initConn = connectSqlite3
 
-
--- | Adds a Profile with the given id.
-addProfile :: Connection -> Integer -> Profile -> IO Bool
-addProfile c i p = do
-    n <- run c "INSERT INTO profiles VALUES (?, ?)"
-        [toSql i, toSql $ serialize p]
+addInto :: Connection -> String -> Integer -> DBisable -> IO Bool
+addInto c table i input = do
+    n <- run c "INSERT INTO " ++ table ++ " VALUES (?, ?)"
+           [toSql i, toSql $ serialize input]
     return (n > 0)
 
+getForm :: Connection -> String -> Integer -> IO a
+getForm c table i = do
+    q <- quickQuery c "SELECT value FROM " ++ table ++  " where id = ?" [toSql i]
+    return $ extract q
+    where
+      extract :: [[SqlValue]] -> Maybe Profile
+      extract [[v]] = deserialize $ fromSql v
+
+-- | Adds a Profile with the given id.
+addProfile :: Connection -> Integer -> Cyclic Profile -> IO Bool
+addProfile c i cp = addInto c "profiles" i cp
+
 -- | Recovers a Profile from a given id.
-getProfile :: Connection -> Integer -> IO (Maybe Profile)
+getProfile :: Connection -> Integer -> IO (Maybe Cyclic Profile)
 getProfile c i = do
     q <- quickQuery c "SELECT value FROM profiles where id = ?" [toSql i]
     return $ extract q
     where
       extract :: [[SqlValue]] -> Maybe Profile
       extract [[v]] = case reads $ fromSql v of
-        [(p, "")] -> Just p
+        [(cp, "")] -> Just cp
         _         -> Nothing
       extract _ = Nothing

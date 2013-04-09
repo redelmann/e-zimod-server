@@ -15,11 +15,12 @@ module Model.Machine (
 import Control.Monad (mzero)
 import Control.Applicative
 import Control.Arrow (first)
-import Data.List (find, foldl')
+import Data.List (find, foldl', isPrefixOf)
 import Data.Aeson
 
 import Model.Types
 import Model.Profile
+import Utils.DBClass
 
 -- | Type of possible states of machines.
 type State = String
@@ -79,6 +80,13 @@ computeProfile md is xs = do
 data Cyclic a = Repeat a  -- ^ The element is repeated ad infinitum
               | Once a    -- ^ The element is not repeated
               deriving (Show, Eq, Read)
+
+instance DBisable a => DBisable (Cyclic a) where
+    serialize (Once x) = "O," ++ serialize x 
+    serialize (Repeat x) = "R," ++ serialize x
+    deserialize str | "O," `isPrefixOf` str = Once (deserialize str)
+                    | "R," `isPrefixOf` str = Repeat (deserialize str)
+                    | otherwise = error $ "String ''" ++ str ++ "'' cannot be view as Cyclic object "
 
 instance ToJSON a => ToJSON (Cyclic a) where
     toJSON (Once x)   = object ["cyclic" .= False, "data" .= x]
