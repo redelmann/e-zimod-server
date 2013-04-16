@@ -29,7 +29,11 @@ resetDB c = do
     mapM_ (\ t -> run c ("CREATE TABLE " ++ t) []) tables
   where
     tables = [ "profiles (id INTEGER PRIMARY KEY, value TEXT)"
-             , "machines (id INTEGER PRIMARY KEY, infos TEXT)" ]
+             , "machines (id INTEGER PRIMARY KEY, name TEXT, type TEXT)"
+             , "relations (pid INTEGER, mid INTEGER, state TEXT" ++
+                          ", FOREIGN KEY(pid) REFERENCES profiles(id)" ++
+                          ", FOREIGN KEY(mid) REFERENCES machines(id)" ++
+                          ", PRIMARY KEY(mid,pid))"]
 
 -- | Opens a connection on the given sql database.
 initConn :: String -> IO Connection
