@@ -84,8 +84,8 @@ data Cyclic a = Repeat a  -- ^ The element is repeated ad infinitum
 instance DBisable a => DBisable (Cyclic a) where
     serialize (Once x) = "O," ++ serialize x
     serialize (Repeat x) = "R," ++ serialize x
-    deserialize str | "O," `isPrefixOf` str = Once (deserialize str)
-                    | "R," `isPrefixOf` str = Repeat (deserialize str)
+    deserialize str | "O," `isPrefixOf` str = Once (deserialize $ drop 2 str)
+                    | "R," `isPrefixOf` str = Repeat (deserialize $ drop 2 str)
                     | otherwise = error $ "String ''" ++
                                           str ++
                                           "'' cannot be view as Cyclic object "

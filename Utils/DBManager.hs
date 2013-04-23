@@ -3,6 +3,9 @@ module Utils.DBManager
     , initConn
     , addProfile
     , getProfile
+    , getTable
+    , module Database.HDBC
+    , module Database.HDBC.Sqlite3
     ) where
 
 import Database.HDBC
@@ -11,6 +14,8 @@ import Database.HDBC.Sqlite3
 import Model.Profile
 import Utils.DBClass
 import Model.Machine
+import Data.Aeson
+import Control.Arrow
 
 -- | Excutes an action on a given database.
 withDataBase :: String -> (Connection -> IO a) -> IO a
@@ -45,9 +50,17 @@ addInto c table i input = do
            [toSql i, toSql $ serialize input]
     return (n > 0)
 
+getTable :: (DBisable a, ToJSON a) => Connection -> String -> IO [(Integer,a)]
+getTable c table = do
+    q <- quickQuery' c ("SELECT * FROM " ++ table) []
+    return $ map extract q
+    where
+      extract :: (DBisable a, ToJSON a) => [SqlValue] -> (Integer,a)
+      extract [i,v] = (fromSql *** (deserialize . fromSql)) $ (i,v)
+
 getForm :: DBisable a => Connection -> String -> Integer -> IO a
 getForm c table i = do
-    q <- quickQuery c ("SELECT value FROM " ++ table ++  " where id = ?")
+    q <- quickQuery' c ("SELECT value FROM " ++ table ++  " where id = ?")
            [toSql i]
     return $ extract q
     where
