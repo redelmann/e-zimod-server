@@ -31,8 +31,8 @@ data MachineDescription = MachineDescription
     -- ^ Name of the machine
     , behavior    :: [(State, Cyclic Profile)]
     -- ^ Behavior in various states, as described by possibly cyclic profiles
-    , transitions :: [(State, State, Second)]
-    -- ^ Transitions time between states
+    , transitions :: [(State, State, Second, Second)]
+    -- ^ Transitions time between states, along with possible postpone time
     } deriving (Show, Eq, Read)
 
 instance FromJSON MachineDescription where
@@ -65,7 +65,7 @@ computeProfile md is xs = do
         -- Trimming the last computed profile upto time t.
         let pa = p `upTo` t
         -- Getting transition time.
-        (_, _, dt) <- find (\ (a, b, _) -> a == s1 && b == s2) (transitions md)
+        (_, _, dt, _) <- find (\ (a, b, _, _) -> a == s1 && b == s2) (transitions md)
         -- Getting behavior in new state.
         cp <- lookup s2 (behavior md)
         -- Uncycling the behavior.
