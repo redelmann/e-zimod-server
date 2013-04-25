@@ -6,6 +6,7 @@ module Utils.DBManager
     , getTable
     , module Database.HDBC
     , module Database.HDBC.Sqlite3
+    , module Utils.DBClass
     ) where
 
 import Database.HDBC
@@ -38,7 +39,7 @@ resetDB c = do
              , "relations (pid INTEGER, mid INTEGER, state TEXT" ++
                           ", FOREIGN KEY(pid) REFERENCES profiles(id)" ++
                           ", FOREIGN KEY(mid) REFERENCES machines(id)" ++
-                          ", PRIMARY KEY(mid,pid))"]
+                          ", PRIMARY KEY(mid, pid))"]
 
 -- | Opens a connection on the given sql database.
 initConn :: String -> IO Connection
@@ -50,7 +51,7 @@ addInto c table i input = do
            [toSql i, toSql $ serialize input]
     return (n > 0)
 
-getTable :: (DBisable a, ToJSON a) => Connection -> String -> IO [(Integer,a)]
+getTable :: (DBisable a, ToJSON a) => Connection -> String -> IO [(Integer, a)]
 getTable c table = do
     q <- quickQuery' c ("SELECT * FROM " ++ table) []
     return $ map extract q

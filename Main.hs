@@ -14,6 +14,8 @@ import qualified Data.ByteString.Lazy.Char8 as LBS
 
 import Data.Profiles
 import Model
+import Settings
+import Utils.DBManager
 
 instance RandPicker Snap where
     pick = liftIO . pick
@@ -34,10 +36,18 @@ site = route
         <*> (doubleToRational <$> readParam "b")
         <*> jsonParam "profile" )
     , ("randomProfile", sendAsJsonP =<< randomProfiles =<< readParam "n")
+    , ("getTableProfile",sendAsJsonP =<< (getTableH "profiles" :: Snap [(Integer, Cyclic Profile)]))
     , ("fridge", sendAsJsonP =<< getFridgeProfile) ]
   where
     doubleToRational :: Double -> Rational
     doubleToRational = toRational
+
+getTableH :: (ToJSON a, DBisable a, Eq a) => String -> Snap [(Integer, a)]
+getTableH tab = do
+  c <- liftIO $ initConn databaseName 
+  e <- elem tab <$> liftIO (getTables c)
+  unless e $ respondWith 404 "table not found" 
+  liftIO $ getTable c tab
 
 getFridgeProfile :: Snap Profile
 getFridgeProfile = do

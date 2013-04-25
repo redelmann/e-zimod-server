@@ -30,6 +30,7 @@ executable e-zimod
                    aeson,
                    bytestring,
                    rand-vars,
+                   HDBC,
                    HDBC-sqlite3
 
 test-suite test-model
