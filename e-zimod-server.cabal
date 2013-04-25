@@ -17,6 +17,9 @@ source-repository head
 library
   build-depends:   base,
                    aeson,
+                   binary,
+                   convertible,
+                   ghc-prim,
                    bytestring,
                    HDBC,
                    HDBC-sqlite3
@@ -28,6 +31,9 @@ executable e-zimod
   build-depends:   base,
                    snap,
                    aeson,
+                   binary,
+                   convertible,
+                   ghc-prim,
                    bytestring,
                    rand-vars,
                    HDBC,

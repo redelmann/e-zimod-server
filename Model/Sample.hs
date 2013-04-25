@@ -1,17 +1,32 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, DeriveGeneric, MultiParamTypeClasses #-}
 
 module Model.Sample where
+
+import GHC.Generics (Generic)
 
 import Control.Applicative ((<*>), (<$>))
 import Control.Monad (mzero)
 
+import Database.HDBC
+import Data.Convertible.Base
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.Binary as B
 import Data.Aeson
 
 import Model.Types
 import Model.Profile
 
 data Sample = Sample Second [Joule]
-               deriving (Eq, Show)
+               deriving (Eq, Show, Generic)
+
+instance B.Binary Sample
+
+instance Convertible Sample SqlValue where
+    safeConvert = Right . SqlByteString . BS.concat . BL.toChunks . B.encode
+
+instance Convertible SqlValue Sample where
+    safeConvert (SqlByteString bs) = Right $ B.decode $ BL.fromChunks [bs]
 
 instance ToJSON Sample where
     toJSON (Sample t xs) = object ["time" .= t, "data" .= xs]

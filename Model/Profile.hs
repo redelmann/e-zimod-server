@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveGeneric, MultiParamTypeClasses #-}
+
 -- | This modules defines `Profile`s, which are power over time graphs.
 module Model.Profile
     ( Profile
@@ -19,6 +21,13 @@ module Model.Profile
     , getList
     ) where
 
+import GHC.Generics (Generic)
+
+import Database.HDBC
+import Data.Convertible.Base
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.Binary as B
 import Data.Ord
 import Data.Aeson
 import Data.List (sortBy)
@@ -27,7 +36,6 @@ import Control.Applicative
 import Control.Arrow (first, (&&&))
 
 import Model.Types
-import Utils.DBClass
 
 {- | Power profile. Determines the power at some given time.
 
@@ -35,13 +43,15 @@ import Utils.DBClass
      and at both ends to be constant. -}
 newtype Profile = Profile [(Second, Watt)]
                -- ^ Non empty, sorted by increasing second
-               deriving (Read, Show, Eq)
+               deriving (Read, Show, Eq, Generic)
 
-instance DBisable Profile where
-  -- | Serializes a profile, for use in the database.
-  serialize = show
-  -- | Deserializes a profile from a string.
-  deserialize = read
+instance B.Binary Profile
+
+instance Convertible Profile SqlValue where
+    safeConvert = Right . SqlByteString . BS.concat . BL.toChunks . B.encode
+
+instance Convertible SqlValue Profile where
+    safeConvert (SqlByteString bs) = Right $ B.decode $ BL.fromChunks [bs]
 
 instance FromJSON Profile where
     parseJSON json = do

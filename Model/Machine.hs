@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, DeriveGeneric, MultiParamTypeClasses #-}
 
 -- | This modules defines creation and manipulation of machines.
 module Model.Machine (
@@ -12,6 +12,13 @@ module Model.Machine (
     , uncycle
     ) where
 
+import GHC.Generics (Generic)
+
+import Database.HDBC
+import Data.Convertible.Base
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.Binary as B
 import Control.Monad (mzero)
 import Control.Applicative
 import Control.Arrow (first)
@@ -20,7 +27,6 @@ import Data.Aeson
 
 import Model.Types
 import Model.Profile
-import Utils.DBClass
 
 -- | Type of possible states of machines.
 type State = String
@@ -33,7 +39,15 @@ data MachineDescription = MachineDescription
     -- ^ Behavior in various states, as described by possibly cyclic profiles
     , transitions :: [(State, State, Second, Second)]
     -- ^ Transitions time between states, along with possible postpone time
-    } deriving (Show, Eq, Read)
+    } deriving (Show, Eq, Generic)
+
+instance B.Binary MachineDescription
+
+instance Convertible MachineDescription SqlValue where
+    safeConvert = Right . SqlByteString . BS.concat . BL.toChunks . B.encode
+
+instance Convertible SqlValue MachineDescription where
+    safeConvert (SqlByteString bs) = Right $ B.decode $ BL.fromChunks [bs]
 
 instance FromJSON MachineDescription where
     parseJSON (Object v) = MachineDescription
@@ -79,16 +93,15 @@ computeProfile md is xs = do
      infinite cyclic structures as finite ones. -}
 data Cyclic a = Repeat a  -- ^ The element is repeated ad infinitum
               | Once a    -- ^ The element is not repeated
-              deriving (Show, Eq, Read)
+              deriving (Show, Eq, Generic)
 
-instance DBisable a => DBisable (Cyclic a) where
-    serialize (Once x) = "O," ++ serialize x
-    serialize (Repeat x) = "R," ++ serialize x
-    deserialize str | "O," `isPrefixOf` str = Once (deserialize $ drop 2 str)
-                    | "R," `isPrefixOf` str = Repeat (deserialize $ drop 2 str)
-                    | otherwise = error $ "String ''" ++
-                                          str ++
-                                          "'' cannot be view as Cyclic object "
+instance (B.Binary a) => B.Binary (Cyclic a)
+
+instance (B.Binary a) => Convertible (Cyclic a) SqlValue where
+    safeConvert = Right . SqlByteString . BS.concat . BL.toChunks . B.encode
+
+instance (B.Binary a) => Convertible SqlValue (Cyclic a) where
+    safeConvert (SqlByteString bs) = Right $ B.decode $ BL.fromChunks [bs]
 
 instance ToJSON a => ToJSON (Cyclic a) where
     toJSON (Once x)   = object ["cyclic" .= False, "data" .= x]
