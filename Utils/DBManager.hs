@@ -6,9 +6,11 @@ module Utils.DBManager
     , addProfile
     , getProfile
     , getTable
+    , getRelation
     , DBisable
     , module Database.HDBC
     , module Database.HDBC.Sqlite3
+    , tempfilldb
     ) where
 
 import Data.Convertible.Base
@@ -18,7 +20,6 @@ import Database.HDBC.Sqlite3
 import Model.Profile
 import Model.Machine
 import Data.Aeson
-import Control.Arrow
 
 type DBisable a = (Convertible a SqlValue, Convertible SqlValue a)
 
@@ -38,12 +39,21 @@ resetDB c = do
     mapM_ (\ t -> run c ("DROP TABLE " ++ t) []) currtables
     mapM_ (\ t -> run c ("CREATE TABLE " ++ t) []) tables
   where
-    tables = [ "profiles (id INTEGER PRIMARY KEY, value TEXT)"
+    tables = [ "userprofiles (id INTEGER PRIMARY KEY, value TEXT)"
              , "machines (id INTEGER PRIMARY KEY, value TEXT)"
-             , "relations (pid INTEGER, mid INTEGER, state TEXT" ++
-                          ", FOREIGN KEY(pid) REFERENCES profiles(id)" ++
+             , "relations (pid INTEGER, mid INTEGER" ++
+                          ", FOREIGN KEY(pid) REFERENCES userprofiles(id)" ++
                           ", FOREIGN KEY(mid) REFERENCES machines(id)" ++
                           ", PRIMARY KEY(mid, pid))"]
+
+tempfilldb :: IO () 
+tempfilldb = do
+  c <- initConn "test.db"
+  addProfile c 0 (Once $ square 0 0 10 5)
+  addProfile c 1 (Repeat $ square 0 5 10 8)
+  addProfile c 2 (Once $ constant 5)
+  commit c
+  disconnect c
 
 -- | Opens a connection on the given sql database.
 initConn :: String -> IO Connection
@@ -63,6 +73,14 @@ getTable c table = do
       extract :: (DBisable a, ToJSON a) => [SqlValue] -> (Integer,a)
       extract [i,v] = (fromSql i, fromSql v)
 
+getRelation :: Connection -> IO [(Integer, Integer)]
+getRelation c = do 
+    q <- quickQuery' c ("SELECT * FROM relations") []
+    return $ map extract q
+    where
+      extract :: [SqlValue] -> (Integer, Integer)
+      extract [i,j] = (fromSql i, fromSql j)
+
 getForm :: DBisable a => Connection -> String -> Integer -> IO a
 getForm c table i = do
     q <- quickQuery' c ("SELECT value FROM " ++ table ++  " where id = ?")
@@ -74,12 +92,12 @@ getForm c table i = do
 
 -- | Adds a Profile with the given id.
 addProfile :: Connection -> Integer -> Cyclic Profile -> IO Bool
-addProfile c = addInto c "profiles"
+addProfile c = addInto c "userprofiles"
 
 -- | Recovers a Profile from a given id.
 getProfile :: Connection -> Integer -> IO (Cyclic Profile)
 getProfile c i = do
-    q <- quickQuery c "SELECT value FROM profiles where id = ?" [toSql i]
+    q <- quickQuery c "SELECT value FROM userprofiles where id = ?" [toSql i]
     return $ extract q
     where
       extract :: [[SqlValue]] -> Cyclic Profile

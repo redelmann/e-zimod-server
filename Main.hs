@@ -36,7 +36,9 @@ site = route
         <*> (doubleToRational <$> readParam "b")
         <*> jsonParam "profile" )
     , ("randomProfile", sendAsJsonP =<< randomProfiles =<< readParam "n")
-    , ("getTableProfile",sendAsJsonP =<< (getTableH "profiles" :: Snap [(Integer, Cyclic Profile)]))
+    , ("getTableProfile",sendAsJsonP =<< (getTableH "userprofiles" :: Snap [(Integer, Cyclic Profile)]))
+    , ("getTableMachine",sendAsJsonP =<< (getTableH "machines" :: Snap [(Integer, MachineDescription)]))
+    , ("getTableRelation",sendAsJsonP =<< getRelationH)
     , ("fridge", sendAsJsonP =<< getFridgeProfile) ]
   where
     doubleToRational :: Double -> Rational
@@ -48,6 +50,11 @@ getTableH tab = do
   e <- elem tab <$> liftIO (getTables c)
   unless e $ respondWith 404 "table not found" 
   liftIO $ getTable c tab
+
+getRelationH :: Snap [(Integer, Integer)]
+getRelationH = liftIO $ do
+  c <- initConn databaseName 
+  getRelation c 
 
 getFridgeProfile :: Snap Profile
 getFridgeProfile = do
