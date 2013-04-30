@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric, MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 -- | This modules defines `Profile`s, which are power over time graphs.
 module Model.Profile
@@ -21,8 +21,6 @@ module Model.Profile
     , getList
     ) where
 
-import GHC.Generics (Generic)
-
 import Database.HDBC
 import Data.Convertible.Base
 import qualified Data.ByteString as BS
@@ -43,9 +41,11 @@ import Model.Types
      and at both ends to be constant. -}
 newtype Profile = Profile [(Second, Watt)]
                -- ^ Non empty, sorted by increasing second
-               deriving (Read, Show, Eq, Generic)
+               deriving (Read, Show, Eq)
 
-instance B.Binary Profile
+instance B.Binary Profile where
+    put (Profile p) = B.put p
+    get = Profile <$> B.get
 
 instance Convertible Profile SqlValue where
     safeConvert = Right . SqlByteString . BS.concat . BL.toChunks . B.encode

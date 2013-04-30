@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, DeriveGeneric, MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings, MultiParamTypeClasses #-}
 
 -- | This modules defines creation and manipulation of machines.
 module Model.Machine (
@@ -11,8 +11,6 @@ module Model.Machine (
     , Cyclic (..)
     , uncycle
     ) where
-
-import GHC.Generics (Generic)
 
 import Database.HDBC
 import Data.Convertible.Base
@@ -39,9 +37,15 @@ data MachineDescription = MachineDescription
     -- ^ Behavior in various states, as described by possibly cyclic profiles
     , transitions :: [(State, State, Second, Second)]
     -- ^ Transitions time between states, along with possible postpone time
-    } deriving (Show, Eq, Generic)
+    } deriving (Show, Eq)
 
-instance B.Binary MachineDescription
+instance B.Binary MachineDescription where
+    put (MachineDescription n b ts) = do
+        B.put n
+        B.put b
+        B.put ts
+
+    get = MachineDescription <$> B.get <*> B.get <*> B.get
 
 instance Convertible MachineDescription SqlValue where
     safeConvert = Right . SqlByteString . BS.concat . BL.toChunks . B.encode
@@ -93,7 +97,7 @@ computeProfile md is xs = do
      infinite cyclic structures as finite ones. -}
 data Cyclic a = Repeat a  -- ^ The element is repeated ad infinitum
               | Once a    -- ^ The element is not repeated
-              deriving (Show, Eq, Generic)
+              deriving (Show, Eq)
 
 instance (B.Binary a) => B.Binary (Cyclic a) where
     put (Repeat x) = do
