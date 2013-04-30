@@ -23,11 +23,9 @@ import Control.Arrow (first)
 import Data.List (find, foldl', isPrefixOf)
 import Data.Aeson
 
+import Model.State
 import Model.Types
 import Model.Profile
-
--- | Type of possible states of machines.
-type State = String
 
 -- | Describes a machine.
 data MachineDescription = MachineDescription
