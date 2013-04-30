@@ -1,8 +1,6 @@
-{-# LANGUAGE OverloadedStrings, DeriveGeneric, MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings, MultiParamTypeClasses #-}
 
 module Model.Sample where
-
-import GHC.Generics (Generic)
 
 import Control.Applicative ((<*>), (<$>))
 import Control.Monad (mzero)
@@ -18,9 +16,14 @@ import Model.Types
 import Model.Profile
 
 data Sample = Sample Second [Joule]
-               deriving (Eq, Show, Generic)
+               deriving (Eq, Show)
 
-instance B.Binary Sample
+instance B.Binary Sample where
+    put (Sample s js) = do
+        B.put s
+        B.put js
+
+    get = Sample <$> B.get <*> B.get
 
 instance Convertible Sample SqlValue where
     safeConvert = Right . SqlByteString . BS.concat . BL.toChunks . B.encode
