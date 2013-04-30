@@ -42,9 +42,9 @@ executable e-zimod
 test-suite test-model
   type:            exitcode-stdio-1.0
   main-is:         Test/Model.hs
-  build-depends:   base, aeson, QuickCheck, e-zimod-server
+  build-depends:   base, aeson, binary, QuickCheck, e-zimod-server
 
 test-suite test-json
   type:            exitcode-stdio-1.0
   main-is:         Test/Json.hs
-  build-depends:   base, aeson, QuickCheck, e-zimod-server
+  build-depends:   base, aeson, binary, QuickCheck, e-zimod-server

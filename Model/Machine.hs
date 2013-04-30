@@ -95,7 +95,20 @@ data Cyclic a = Repeat a  -- ^ The element is repeated ad infinitum
               | Once a    -- ^ The element is not repeated
               deriving (Show, Eq, Generic)
 
-instance (B.Binary a) => B.Binary (Cyclic a)
+instance (B.Binary a) => B.Binary (Cyclic a) where
+    put (Repeat x) = do
+        B.putWord8 1
+        B.put x
+    put (Once x) = do
+        B.putWord8 0
+        B.put x
+
+    get = do
+        w <- B.getWord8
+        x <- B.get
+        return $ case w of
+            0 -> Once x
+            1 -> Repeat x
 
 instance (B.Binary a) => Convertible (Cyclic a) SqlValue where
     safeConvert = Right . SqlByteString . BS.concat . BL.toChunks . B.encode
