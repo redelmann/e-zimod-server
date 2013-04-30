@@ -83,7 +83,8 @@ computeProfile md is xs = do
         -- Trimming the last computed profile upto time t.
         let pa = p `upTo` t
         -- Getting transition time.
-        (_, _, dt, _) <- find (\ (a, b, _, _) -> a == s1 && b == s2) (transitions md)
+        (_, _, dt, _) <-
+            find (\ (a, b, _, _) -> a == s1 && b == s2) (transitions md)
         -- Getting behavior in new state.
         cp <- lookup s2 (behavior md)
         -- Uncycling the behavior.

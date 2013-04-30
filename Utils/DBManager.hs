@@ -46,7 +46,7 @@ resetDB c = do
                           ", FOREIGN KEY(mid) REFERENCES machines(id)" ++
                           ", PRIMARY KEY(mid, pid))"]
 
-tempfilldb :: IO () 
+tempfilldb :: IO ()
 tempfilldb = do
   c <- initConn "test.db"
   addProfile c 0 (Once $ square 0 0 10 5)
@@ -70,16 +70,16 @@ getTable c table = do
     q <- quickQuery' c ("SELECT * FROM " ++ table) []
     return $ map extract q
     where
-      extract :: (DBisable a, ToJSON a) => [SqlValue] -> (Integer,a)
-      extract [i,v] = (fromSql i, fromSql v)
+      extract :: (DBisable a, ToJSON a) => [SqlValue] -> (Integer, a)
+      extract [i, v] = (fromSql i, fromSql v)
 
 getRelation :: Connection -> IO [(Integer, Integer)]
-getRelation c = do 
-    q <- quickQuery' c ("SELECT * FROM relations") []
+getRelation c = do
+    q <- quickQuery' c "SELECT * FROM relations" []
     return $ map extract q
     where
       extract :: [SqlValue] -> (Integer, Integer)
-      extract [i,j] = (fromSql i, fromSql j)
+      extract [i, j] = (fromSql i, fromSql j)
 
 getForm :: DBisable a => Connection -> String -> Integer -> IO a
 getForm c table i = do

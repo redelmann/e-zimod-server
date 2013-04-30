@@ -27,37 +27,37 @@ main = quickHttpServe site
 -- | Main site.
 site :: Snap ()
 site = route
-    -- Some small examples.
-    [ ("peek",  sendAsJson =<< peekl
-        <$> jsonParam "profile"
-        <*> (doubleToRational <$> readParam "second"))
-    , ("energy", sendAsJson =<< computeEnergy
-        <$> (doubleToRational <$> readParam "a")
-        <*> (doubleToRational <$> readParam "b")
-        <*> jsonParam "profile" )
-    , ("randomProfile", sendAsJsonP =<< randomProfiles =<< readParam "n")
-    , ("getTableProfile",sendAsJsonP =<< (getTableH "userprofiles" :: Snap [(Integer, Cyclic Profile)]))
-    , ("getTableMachine",sendAsJsonP =<< (getTableH "machines" :: Snap [(Integer, MachineDescription)]))
-    , ("getTableRelation",sendAsJsonP =<< getRelationH)
-    , ("fridge", sendAsJsonP =<< getFridgeProfile) ]
-  where
-    doubleToRational :: Double -> Rational
-    doubleToRational = toRational
+    [ ("getTableProfile",  sendAsJsonP =<< getProfilesH)
+    , ("getTableMachine",  sendAsJsonP =<< getMachinesH)
+    , ("getTableRelation", sendAsJsonP =<< getRelationH)
+    , ("fridge",           sendAsJsonP =<< getFridgeProfileH)
+    , ("randomProfile",    sendAsJsonP =<< randomProfilesH) ]
 
+-- | Profiles handler.
+getProfilesH :: Snap [(Integer, Cyclic Profile)]
+getProfilesH = getTableH "userprofiles"
+
+-- | Machines handler.
+getMachinesH :: Snap [(Integer, MachineDescription)]
+getMachinesH = getTableH "machines"
+
+-- | General database handler.
 getTableH :: (ToJSON a, DBisable a, Eq a) => String -> Snap [(Integer, a)]
 getTableH tab = do
-  c <- liftIO $ initConn databaseName 
+  c <- liftIO $ initConn databaseName
   e <- elem tab <$> liftIO (getTables c)
-  unless e $ respondWith 404 "table not found" 
+  unless e $ respondWith 404 "table not found"
   liftIO $ getTable c tab
 
+-- | Relation handler.
 getRelationH :: Snap [(Integer, Integer)]
 getRelationH = liftIO $ do
-  c <- initConn databaseName 
-  getRelation c 
+  c <- initConn databaseName
+  getRelation c
 
-getFridgeProfile :: Snap Profile
-getFridgeProfile = do
+-- | Fridge profile handler.
+getFridgeProfileH :: Snap Profile
+getFridgeProfileH = do
     ts <- jsonParam "times" :: Snap [Double]
     let ts' = sort $ map toRational ts
     let es  = zip ts' $ cycle ["Off", "On"]
@@ -66,8 +66,10 @@ getFridgeProfile = do
     return $ p `upTo` toRational n
 
 -- | Computes `n` random profiles.
-randomProfiles :: Int -> Snap [Profile]
-randomProfiles n = pick $ replicateM n prof
+randomProfilesH :: Snap [Profile]
+randomProfilesH = do
+    n <- readParam "n"
+    pick $ replicateM n prof
   where
     prof :: Rand Profile
     prof = do
