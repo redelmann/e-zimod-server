@@ -18,6 +18,7 @@ import Database.HDBC
 import Database.HDBC.Sqlite3
 
 import Model.Profile
+import Model.UserProfile
 import Model.Machine
 import Data.Aeson
 
@@ -49,9 +50,9 @@ resetDB c = do
 tempfilldb :: IO ()
 tempfilldb = do
   c <- initConn "test.db"
-  addProfile c 0 (Once $ square 0 0 10 5)
-  addProfile c 1 (Repeat $ square 0 5 10 8)
-  addProfile c 2 (Once $ constant 5)
+  --addProfile c 0 (Once $ square 0 0 10 5)
+  --addProfile c 1 (Repeat $ square 0 5 10 8)
+  --addProfile c 2 (Once $ constant 5)
   commit c
   disconnect c
 
@@ -65,12 +66,12 @@ addInto c table i input = do
            [toSql i, toSql input]
     return (n > 0)
 
-getTable :: (DBisable a, ToJSON a) => Connection -> String -> IO [(Integer, a)]
+getTable :: DBisable a => Connection -> String -> IO [(Integer, a)]
 getTable c table = do
     q <- quickQuery' c ("SELECT * FROM " ++ table) []
     return $ map extract q
     where
-      extract :: (DBisable a, ToJSON a) => [SqlValue] -> (Integer, a)
+      extract :: DBisable a => [SqlValue] -> (Integer, a)
       extract [i, v] = (fromSql i, fromSql v)
 
 getRelation :: Connection -> IO [(Integer, Integer)]
@@ -91,14 +92,14 @@ getForm c table i = do
       extract [[v]] = fromSql v
 
 -- | Adds a Profile with the given id.
-addProfile :: Connection -> Integer -> Cyclic Profile -> IO Bool
+addProfile :: Connection -> Integer -> UserProfile-> IO Bool
 addProfile c = addInto c "userprofiles"
 
 -- | Recovers a Profile from a given id.
-getProfile :: Connection -> Integer -> IO (Cyclic Profile)
+getProfile :: Connection -> Integer -> IO UserProfile
 getProfile c i = do
     q <- quickQuery c "SELECT value FROM userprofiles where id = ?" [toSql i]
     return $ extract q
     where
-      extract :: [[SqlValue]] -> Cyclic Profile
+      extract :: [[SqlValue]] -> UserProfile
       extract [[v]] = fromSql v

@@ -17,7 +17,7 @@ import Model.Types
 type Name = String
 
 newtype UserProfile = UserProfile (M.Map Name [(Second, State)])
-	deriving (Eq, Show)
+  deriving (Eq, Show)
 
 instance B.Binary UserProfile where
     put (UserProfile as) = B.put as

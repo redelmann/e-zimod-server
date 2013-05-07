@@ -34,7 +34,7 @@ site = route
     , ("randomProfile",    sendAsJsonP =<< randomProfilesH) ]
 
 -- | Profiles handler.
-getProfilesH :: Snap [(Integer, Cyclic Profile)]
+getProfilesH :: Snap [(Integer, UserProfile)]
 getProfilesH = getTableH "userprofiles"
 
 -- | Machines handler.
