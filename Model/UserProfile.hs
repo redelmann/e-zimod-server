@@ -1,6 +1,9 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Model.UserProfile where
+module Model.UserProfile
+    ( UserProfile
+    , mkUserProfile
+    ) where
 
 import qualified Data.Map as M
 import qualified Data.Binary as B
@@ -17,7 +20,10 @@ import Model.Types
 type Name = String
 
 newtype UserProfile = UserProfile (M.Map Name [(Second, State)])
-	deriving (Eq, Show)
+    deriving (Eq, Show)
+
+mkUserProfile :: [(Name, [(Second, State)])] -> UserProfile
+mkUserProfile = UserProfile . M.fromList
 
 instance B.Binary UserProfile where
     put (UserProfile as) = B.put as
