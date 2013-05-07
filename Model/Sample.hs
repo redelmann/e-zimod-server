@@ -48,3 +48,6 @@ computeSample t p = Sample t $ go 0 p
         t1 = t0 + t
         (n, n') = split p' t1
         x       = computeEnergy t0 t1 n
+
+maxValue :: Sample -> Joule
+maxValue (Sample _ xs) = maximum xs
