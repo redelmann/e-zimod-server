@@ -13,6 +13,7 @@ module Utils.DBManager
     , tempfilldb
     ) where
 
+import Data.Maybe (listToMaybe)
 import Data.Convertible.Base
 import Database.HDBC
 import Database.HDBC.Sqlite3
@@ -65,30 +66,38 @@ addInto c table i input = do
            [toSql i, toSql input]
     return (n > 0)
 
-getTable :: (DBisable a, ToJSON a) => Connection -> String -> IO [(Integer, a)]
+getByID :: DBisable a => Connection -> String -> Integer -> IO (Maybe a)
+getByID c table i = do
+    q <- quickQuery' c ("SELECT value FROM " ++ table ++ " WHERE id=?") [toSql i]
+    return $ fmap extract $ listToMaybe q
+  where
+    extract :: DBisable a => [SqlValue] -> a
+    extract [v] = fromSql v
+
+getTable :: DBisable a => Connection -> String -> IO [(Integer, a)]
 getTable c table = do
     q <- quickQuery' c ("SELECT * FROM " ++ table) []
     return $ map extract q
-    where
-      extract :: (DBisable a, ToJSON a) => [SqlValue] -> (Integer, a)
-      extract [i, v] = (fromSql i, fromSql v)
+  where
+    extract :: DBisable a => [SqlValue] -> (Integer, a)
+    extract [i, v] = (fromSql i, fromSql v)
 
 getRelation :: Connection -> IO [(Integer, Integer)]
 getRelation c = do
     q <- quickQuery' c "SELECT * FROM relations" []
     return $ map extract q
-    where
-      extract :: [SqlValue] -> (Integer, Integer)
-      extract [i, j] = (fromSql i, fromSql j)
+  where
+    extract :: [SqlValue] -> (Integer, Integer)
+    extract [i, j] = (fromSql i, fromSql j)
 
 getForm :: DBisable a => Connection -> String -> Integer -> IO a
 getForm c table i = do
     q <- quickQuery' c ("SELECT value FROM " ++ table ++  " where id = ?")
            [toSql i]
     return $ extract q
-    where
-      extract :: DBisable a => [[SqlValue]] -> a
-      extract [[v]] = fromSql v
+  where
+    extract :: DBisable a => [[SqlValue]] -> a
+    extract [[v]] = fromSql v
 
 -- | Adds a Profile with the given id.
 addProfile :: Connection -> Integer -> Cyclic Profile -> IO Bool
@@ -99,6 +108,6 @@ getProfile :: Connection -> Integer -> IO (Cyclic Profile)
 getProfile c i = do
     q <- quickQuery c "SELECT value FROM userprofiles where id = ?" [toSql i]
     return $ extract q
-    where
-      extract :: [[SqlValue]] -> Cyclic Profile
-      extract [[v]] = fromSql v
+  where
+    extract :: [[SqlValue]] -> Cyclic Profile
+    extract [[v]] = fromSql v
