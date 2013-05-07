@@ -5,6 +5,7 @@ module Utils.DBManager
     , initConn
     , addProfile
     , getProfile
+    , getByID
     , getTable
     , getRelation
     , DBisable
@@ -13,12 +14,14 @@ module Utils.DBManager
     , tempfilldb
     ) where
 
-import Data.Maybe (listToMaybe)
+import Data.Functor ((<$>))
+import Data.Maybe (listToMaybe, fromJust)
 import Data.Convertible.Base
 import Database.HDBC
 import Database.HDBC.Sqlite3
 
 import Model.Profile
+import Model.UserProfile
 import Model.Machine
 import Data.Aeson
 
@@ -50,9 +53,9 @@ resetDB c = do
 tempfilldb :: IO ()
 tempfilldb = do
   c <- initConn "test.db"
-  addProfile c 0 (Once $ square 0 0 10 5)
-  addProfile c 1 (Repeat $ square 0 5 10 8)
-  addProfile c 2 (Once $ constant 5)
+  --addProfile c 0 (Once $ square 0 0 10 5)
+  --addProfile c 1 (Repeat $ square 0 5 10 8)
+  --addProfile c 2 (Once $ constant 5)
   commit c
   disconnect c
 
@@ -82,6 +85,7 @@ getTable c table = do
     extract :: DBisable a => [SqlValue] -> (Integer, a)
     extract [i, v] = (fromSql i, fromSql v)
 
+
 getRelation :: Connection -> IO [(Integer, Integer)]
 getRelation c = do
     q <- quickQuery' c "SELECT * FROM relations" []
@@ -100,14 +104,10 @@ getForm c table i = do
     extract [[v]] = fromSql v
 
 -- | Adds a Profile with the given id.
-addProfile :: Connection -> Integer -> Cyclic Profile -> IO Bool
+addProfile :: Connection -> Integer -> UserProfile-> IO Bool
 addProfile c = addInto c "userprofiles"
 
 -- | Recovers a Profile from a given id.
-getProfile :: Connection -> Integer -> IO (Cyclic Profile)
-getProfile c i = do
-    q <- quickQuery c "SELECT value FROM userprofiles where id = ?" [toSql i]
-    return $ extract q
-  where
-    extract :: [[SqlValue]] -> Cyclic Profile
-    extract [[v]] = fromSql v
+getProfile :: Connection -> Integer -> IO UserProfile
+getProfile c i = fromJust <$> getByID c "userprofiles" i
+
