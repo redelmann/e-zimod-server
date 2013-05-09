@@ -53,9 +53,9 @@ resetDB c = do
 tempfilldb :: IO ()
 tempfilldb = do
   c <- initConn "test.db"
-  --addProfile c 0 (Once $ square 0 0 10 5)
-  --addProfile c 1 (Repeat $ square 0 5 10 8)
-  --addProfile c 2 (Once $ constant 5)
+  {- addProfile c 0 (Once $ square 0 0 10 5)
+     addProfile c 1 (Repeat $ square 0 5 10 8)
+     addProfile c 2 (Once $ constant 5) -}
   commit c
   disconnect c
 
@@ -71,7 +71,8 @@ addInto c table i input = do
 
 getByID :: DBisable a => Connection -> String -> Integer -> IO (Maybe a)
 getByID c table i = do
-    q <- quickQuery' c ("SELECT value FROM " ++ table ++ " WHERE id=?") [toSql i]
+    q <- quickQuery' c ("SELECT value FROM " ++ table ++ " WHERE id=?")
+      [toSql i]
     return $ fmap extract $ listToMaybe q
   where
     extract :: DBisable a => [SqlValue] -> a
@@ -104,10 +105,9 @@ getForm c table i = do
     extract [[v]] = fromSql v
 
 -- | Adds a Profile with the given id.
-addProfile :: Connection -> Integer -> UserProfile-> IO Bool
+addProfile :: Connection -> Integer -> UserProfile -> IO Bool
 addProfile c = addInto c "userprofiles"
 
 -- | Recovers a Profile from a given id.
 getProfile :: Connection -> Integer -> IO UserProfile
 getProfile c i = fromJust <$> getByID c "userprofiles" i
-

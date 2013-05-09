@@ -38,9 +38,9 @@ site = route
 -- | Day handler.
 getDayH :: Snap ([(Int, Joule)], [(Int, Watt)])
 getDayH = do
-    mms <- pick $ replicateM (4*24) meanAndMax
-    let means = zip [1..] $ map (toRational . fst) mms
-    let maxs  = zip [1..] $ map (toRational . snd) mms
+    mms <- pick $ replicateM (4 * 24) meanAndMax
+    let means = zip [1 ..] $ map (toRational . fst) mms
+    let maxs  = zip [1 ..] $ map (toRational . snd) mms
     return (means, maxs)
   where
     meanAndMax :: Rand (Int, Int)
@@ -52,8 +52,8 @@ getDayH = do
 getWeekH :: Snap ([(Int, Joule)], [(Int, Joule)])
 getWeekH = do
     mms <- pick $ replicateM 7 meanAndMax
-    let means = zip [1..] $ map (toRational . fst) mms
-    let maxs  = zip [1..] $ map (toRational . snd) mms
+    let means = zip [1 ..] $ map (toRational . fst) mms
+    let maxs  = zip [1 ..] $ map (toRational . snd) mms
     return (means, maxs)
   where
     meanAndMax :: Rand (Int, Int)

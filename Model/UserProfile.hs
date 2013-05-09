@@ -1,10 +1,10 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Model.UserProfile
-    ( UserProfile(..)
+    ( UserProfile (..)
     , Name
     , mkUserProfile
-    , MachineUsage(..)
+    , MachineUsage (..)
     , concretize
     ) where
 
@@ -24,16 +24,17 @@ import Model.Machine
 type Name = String
 
 newtype UserProfile = UserProfile
-    { usages :: (M.Map Name MachineUsage) }
+    { usages :: M.Map Name MachineUsage }
     deriving (Eq, Show)
 
 data MachineUsage = MachineUsage
-    { initially :: State 
+    { initially :: State
     , usage     :: [(Second, State)] }
     deriving (Eq, Show)
 
 mkUserProfile :: [(Name, State, [(Second, State)])] -> UserProfile
-mkUserProfile = UserProfile . M.fromList . map (\ (n, s, us) -> (n, MachineUsage s us))
+mkUserProfile = UserProfile . M.fromList .
+    map (\ (n, s, us) -> (n, MachineUsage s us))
 
 instance B.Binary MachineUsage where
     put (MachineUsage s us) = do
@@ -65,5 +66,7 @@ instance ToJSON UserProfile where
 instance FromJSON UserProfile where
     parseJSON v = UserProfile <$> parseJSON v
 
-concretize :: UserProfile -> M.Map Name MachineDescription -> [(MachineDescription, MachineUsage)]
+concretize :: UserProfile
+           -> M.Map Name MachineDescription
+           -> [(MachineDescription, MachineUsage)]
 concretize (UserProfile uss) mds = M.elems $ M.intersectionWith (,) mds uss

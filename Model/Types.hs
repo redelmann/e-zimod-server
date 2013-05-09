@@ -18,7 +18,7 @@ type Watt = Rational
 -- | Unit of energy.
 type Joule = Rational
 
--- | Unit of energy.
+-- | Unit of energy.
 type KiloWattHour = Rational
 
 -- | Converts from Joules to Kilo Watts per Hour.
