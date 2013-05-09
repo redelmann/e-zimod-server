@@ -1,8 +1,11 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Model.UserProfile
-    ( UserProfile
+    ( UserProfile(..)
+    , Name
     , mkUserProfile
+    , MachineUsage(..)
+    , concretize
     ) where
 
 import qualified Data.Map as M
@@ -16,14 +19,35 @@ import Control.Applicative
 
 import Model.State
 import Model.Types
+import Model.Machine
 
 type Name = String
 
-newtype UserProfile = UserProfile (M.Map Name [(Second, State)])
+newtype UserProfile = UserProfile
+    { usages :: (M.Map Name MachineUsage) }
     deriving (Eq, Show)
 
-mkUserProfile :: [(Name, [(Second, State)])] -> UserProfile
-mkUserProfile = UserProfile . M.fromList
+data MachineUsage = MachineUsage
+    { initially :: State 
+    , usage     :: [(Second, State)] }
+    deriving (Eq, Show)
+
+mkUserProfile :: [(Name, State, [(Second, State)])] -> UserProfile
+mkUserProfile = UserProfile . M.fromList . map (\ (n, s, us) -> (n, MachineUsage s us))
+
+instance B.Binary MachineUsage where
+    put (MachineUsage s us) = do
+        B.put s
+        B.put us
+    get = MachineUsage <$> B.get <*> B.get
+
+instance ToJSON MachineUsage where
+    toJSON (MachineUsage s us) = toJSON (s, us)
+
+instance FromJSON MachineUsage where
+    parseJSON v = do
+        (s, us) <- parseJSON v
+        return $ MachineUsage s us
 
 instance B.Binary UserProfile where
     put (UserProfile as) = B.put as
@@ -40,3 +64,6 @@ instance ToJSON UserProfile where
 
 instance FromJSON UserProfile where
     parseJSON v = UserProfile <$> parseJSON v
+
+concretize :: UserProfile -> M.Map Name MachineDescription -> [(MachineDescription, MachineUsage)]
+concretize (UserProfile uss) mds = M.elems $ M.intersectionWith (,) mds uss

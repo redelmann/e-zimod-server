@@ -4,7 +4,7 @@ module Model.Sample
     ( Sample
     , computeSample
     , merge
-    , maxValue
+    , sampledValues
     ) where
 
 import Control.Applicative ((<*>), (<$>))
@@ -57,5 +57,5 @@ computeSample t p = Sample t $ go 0 p
         (n, n') = split p' t1
         x       = computeEnergy t0 t1 n
 
-maxValue :: Sample -> Joule
-maxValue (Sample _ xs) = maximum xs
+sampledValues :: Sample -> [Joule]
+sampledValues (Sample _ vs) = vs

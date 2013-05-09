@@ -21,9 +21,11 @@ library
                    convertible,
                    bytestring,
                    containers,
+                   rand-vars,
                    HDBC,
                    HDBC-sqlite3
   exposed-modules: Model,
+                   Simulation,
                    Utils.DBManager
 
 executable e-zimod
