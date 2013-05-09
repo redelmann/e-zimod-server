@@ -1,6 +1,11 @@
 {-# LANGUAGE OverloadedStrings, MultiParamTypeClasses #-}
 
-module Model.Sample where
+module Model.Sample
+    ( Sample
+    , computeSample
+    , merge
+    , maxValue
+    ) where
 
 import Control.Applicative ((<*>), (<$>))
 import Control.Monad (mzero)
@@ -37,6 +42,9 @@ instance ToJSON Sample where
 instance FromJSON Sample where
     parseJSON (Object v) = Sample <$> v .: "time" <*> v .: "data"
     parseJSON _ = mzero
+
+merge :: Sample -> Sample -> Sample
+merge (Sample t xs) (Sample t' ys) | t == t' = Sample t $ zipWith (+) xs ys
 
 computeSample :: Second -> Profile -> Sample
 computeSample t p = Sample t $ go 0 p
