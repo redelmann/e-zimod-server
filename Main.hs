@@ -49,7 +49,7 @@ getDayH = do
         maxv <- (+ mean) <$> inRange (2, 20)
         return (mean * 15 * 60, maxv)
 
-getWeekH :: Snap ([(Int, Joule)], [(Int, Watt)])
+getWeekH :: Snap ([(Int, Joule)], [(Int, Joule)])
 getWeekH = do
     mms <- pick $ replicateM 7 meanAndMax
     let means = zip [1..] $ map (toRational . fst) mms
@@ -60,7 +60,7 @@ getWeekH = do
     meanAndMax = do
         mean <- inRange (20, 50)
         maxv <- (+ mean) <$> inRange (2, 20)
-        return (mean * 60 * 60 * 24, maxv)
+        return (mean * 60 * 60 * 24, maxv * 15 * 60)
 
 -- | Profiles handler.
 getProfilesH :: Snap [(Integer, UserProfile)]
