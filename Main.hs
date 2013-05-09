@@ -30,8 +30,37 @@ site = route
     [ ("getTableProfile",  sendAsJsonP =<< getProfilesH)
     , ("getTableMachine",  sendAsJsonP =<< getMachinesH)
     , ("getTableRelation", sendAsJsonP =<< getRelationH)
+    , ("day",              sendAsJsonP =<< getDayH)
+    , ("week",             sendAsJsonP =<< getWeekH)
     , ("fridge",           sendAsJsonP =<< getFridgeProfileH)
     , ("randomProfile",    sendAsJsonP =<< randomProfilesH) ]
+
+-- | Day handler.
+getDayH :: Snap ([(Int, Joule)], [(Int, Watt)])
+getDayH = do
+    mms <- pick $ replicateM (4*24) meanAndMax
+    let means = zip [1..] $ map (toRational . fst) mms
+    let maxs  = zip [1..] $ map (toRational . snd) mms
+    return (means, maxs)
+  where
+    meanAndMax :: Rand (Int, Int)
+    meanAndMax = do
+        mean <- inRange (20, 50)
+        maxv <- (+ mean) <$> inRange (2, 20)
+        return (mean * 15 * 60, maxv)
+
+getWeekH :: Snap ([(Int, Joule)], [(Int, Watt)])
+getWeekH = do
+    mms <- pick $ replicateM 7 meanAndMax
+    let means = zip [1..] $ map (toRational . fst) mms
+    let maxs  = zip [1..] $ map (toRational . snd) mms
+    return (means, maxs)
+  where
+    meanAndMax :: Rand (Int, Int)
+    meanAndMax = do
+        mean <- inRange (20, 50)
+        maxv <- (+ mean) <$> inRange (2, 20)
+        return (mean * 60 * 60 * 24, maxv)
 
 -- | Profiles handler.
 getProfilesH :: Snap [(Integer, UserProfile)]
