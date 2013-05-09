@@ -15,7 +15,8 @@ import Model
 import Simulation.Parameter
 
 optimize :: Int -> Parameter -> Rand UserProfile
-optimize tries params = minimumBy (comparing score) <$>
+optimize tries params = minimumBy (comparing score) .
+                        (userProfile params :) <$>
                         replicateM tries generate
   where
     descriptionAndUsages :: M.Map Name (MachineDescription, MachineUsage)
