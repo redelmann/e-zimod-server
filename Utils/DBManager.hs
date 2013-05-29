@@ -66,10 +66,10 @@ tempfilldb = do
   -- beahvior :: [(State, Cyclic Profile)] 
   -- transition :: [(State, State, Second, Second)]
   addMachine c 0 (MachineDescription "fridgy" [("on", Repeat $ fromJust $ mkProfile [(0,0),(10,200),(70,150),(72,0)]),
-                                               ("off", Once $ fromJust $ mkProfile [(0,10),(10,10)])]
+                                               ("off", Once $ fromJust $ mkProfile [(0,10)])]
                                               [("on","off",5,10),("off","on",5,20)])
   addMachine c 1 (MachineDescription "lampy" [("on", Repeat $ fromJust $ mkProfile [(0,50),(10,50)]),
-                                              ("off", Once $ fromJust $ mkProfile [(0,0),(10,0)])]
+                                              ("off", Once $ fromJust $ mkProfile [(0,0)])]
                                              [("on","off",5,10),("off","on",5,20)])
   commit c
   disconnect c
