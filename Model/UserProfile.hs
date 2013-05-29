@@ -24,7 +24,8 @@ import Model.Machine
 type Name = String
 
 newtype UserProfile = UserProfile
-    { usages :: M.Map Name MachineUsage }
+    { userName :: Name
+    , usages   :: M.Map Name MachineUsage }
     deriving (Eq, Show)
 
 data MachineUsage = MachineUsage
@@ -32,8 +33,8 @@ data MachineUsage = MachineUsage
     , usage     :: [(Second, State)] }
     deriving (Eq, Show)
 
-mkUserProfile :: [(Name, State, [(Second, State)])] -> UserProfile
-mkUserProfile = UserProfile . M.fromList .
+mkUserProfile :: Name -> [(Name, State, [(Second, State)])] -> UserProfile
+mkUserProfile name = UserProfile name . M.fromList .
     map (\ (n, s, us) -> (n, MachineUsage s us))
 
 instance B.Binary MachineUsage where
@@ -51,8 +52,10 @@ instance FromJSON MachineUsage where
         return $ MachineUsage s us
 
 instance B.Binary UserProfile where
-    put (UserProfile as) = B.put as
-    get = UserProfile <$> B.get
+    put (UserProfile un as) = do
+        B.put un
+        B.put as
+    get = UserProfile <$> B.get <*> B.get
 
 instance Convertible UserProfile SqlValue where
     safeConvert = Right . SqlByteString . BS.concat . BL.toChunks . B.encode
@@ -69,4 +72,4 @@ instance FromJSON UserProfile where
 concretize :: UserProfile
            -> M.Map Name MachineDescription
            -> [(MachineDescription, MachineUsage)]
-concretize (UserProfile uss) mds = M.elems $ M.intersectionWith (,) mds uss
+concretize (UserProfile _ uss) mds = M.elems $ M.intersectionWith (,) mds uss
