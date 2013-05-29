@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses, OverloadedStrings #-}
 
 module Model.UserProfile
     ( UserProfile (..)
@@ -16,6 +16,7 @@ import Data.Convertible.Base
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import Control.Applicative
+import Control.Monad
 
 import Model.State
 import Model.Types
@@ -23,7 +24,7 @@ import Model.Machine
 
 type Name = String
 
-newtype UserProfile = UserProfile
+data UserProfile = UserProfile
     { userName :: Name
     , usages   :: M.Map Name MachineUsage }
     deriving (Eq, Show)
@@ -64,10 +65,11 @@ instance Convertible SqlValue UserProfile where
     safeConvert (SqlByteString bs) = Right $ B.decode $ BL.fromChunks [bs]
 
 instance ToJSON UserProfile where
-    toJSON (UserProfile xs) = toJSON xs
+    toJSON (UserProfile un xs) = object [ "name" .= un, "data" .= xs]
 
 instance FromJSON UserProfile where
-    parseJSON v = UserProfile <$> parseJSON v
+    parseJSON (Object v) = UserProfile <$> v .: "name" <*> v .: "data"
+    parseJSON _ = mzero
 
 concretize :: UserProfile
            -> M.Map Name MachineDescription

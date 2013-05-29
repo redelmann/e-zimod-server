@@ -52,10 +52,13 @@ optimize tries params =
     steps :: Int
     steps = ceiling (sampleTime params / untilTime params)
 
+    user :: String
+    user = (userName $ userProfile $ params)
+
     {- Generates a user profile, postponing events randomly,
        respecting the constaints. -}
     generate :: Rand UserProfile
-    generate = UserProfile <$> mapM delayUsage descriptionAndUsages
+    generate = UserProfile user <$> mapM delayUsage descriptionAndUsages
 
     -- Computes the a random delay generator for each transition.
     delays :: [(State, State, Second, Second)]
