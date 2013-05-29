@@ -42,6 +42,7 @@ resetDB c = do
     currtables <- getTables c
     mapM_ (\ t -> run c ("DROP TABLE " ++ t) []) currtables
     mapM_ (\ t -> run c ("CREATE TABLE " ++ t) []) tables
+    commit c
   where
     tables = [ "userprofiles (id INTEGER PRIMARY KEY, value TEXT)"
              , "machines (id INTEGER PRIMARY KEY, value TEXT)"
@@ -53,9 +54,23 @@ resetDB c = do
 tempfilldb :: IO ()
 tempfilldb = do
   c <- initConn "test.db"
-  {- addProfile c 0 (Once $ square 0 0 10 5)
-     addProfile c 1 (Repeat $ square 0 5 10 8)
-     addProfile c 2 (Once $ constant 5) -}
+  -- mkUserProfile :: Name -> [(Name, State, [(Second, State)])] -> UserProfile
+  addProfile c 0 (mkUserProfile "Marc"  [("frigo", "off",
+    [(10, "on"), (50, "off"), (220, "on")])])
+  addProfile c 1 (mkUserProfile "Paul" [("frigo", "off",
+    [(10, "on"), (50, "off"), (220, "on")]),
+    ("radiateur", "on",
+    [(200, "off"), (400, "on")])])
+  -- MachineDescription 
+  -- Name :: String
+  -- beahvior :: [(State, Cyclic Profile)] 
+  -- transition :: [(State, State, Second, Second)]
+  addMachine c 0 (MachineDescription "fridgy" [("on", Repeat $ fromJust $ mkProfile [(0,0),(10,200),(70,150),(72,0)]),
+                                               ("off", Once $ fromJust $ mkProfile [(0,10),(10,10)])]
+                                              [("on","off",5,10),("off","on",5,20)])
+  addMachine c 1 (MachineDescription "lampy" [("on", Repeat $ fromJust $ mkProfile [(0,50),(10,50)]),
+                                              ("off", Once $ fromJust $ mkProfile [(0,0),(10,0)])]
+                                             [("on","off",5,10),("off","on",5,20)])
   commit c
   disconnect c
 
@@ -107,6 +122,10 @@ getForm c table i = do
 -- | Adds a Profile with the given id.
 addProfile :: Connection -> Integer -> UserProfile -> IO Bool
 addProfile c = addInto c "userprofiles"
+
+-- | Add a Machine with the given id
+addMachine :: Connection -> Integer -> MachineDescription -> IO Bool
+addMachine c = addInto c "machines"
 
 -- | Recovers a Profile from a given id.
 getProfile :: Connection -> Integer -> IO UserProfile
