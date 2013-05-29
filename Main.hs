@@ -30,10 +30,59 @@ site = route
     [ ("getTableProfile",  sendAsJsonP =<< getProfilesH)
     , ("getTableMachine",  sendAsJsonP =<< getMachinesH)
     , ("getTableRelation", sendAsJsonP =<< getRelationH)
+    
+    -- Machine management.
+    , ("addMachine",       sendAsJsonP =<< addMachineH)
+    , ("updateMachine",    sendAsJsonP =<< updateMachineH)
+    , ("deleteMachine",    sendAsJsonP =<< deleteMachineH)
+
+    -- User profile management.
+    , ("addUserProfile",       sendAsJsonP =<< addUserProfileH)
+    , ("updateUserProfile",    sendAsJsonP =<< updateUserProfileH)
+    , ("deleteUserProfile",    sendAsJsonP =<< deleteUserProfileH)
+
     , ("day",              sendAsJsonP =<< getDayH)
     , ("week",             sendAsJsonP =<< getWeekH)
     , ("fridge",           sendAsJsonP =<< getFridgeProfileH)
     , ("randomProfile",    sendAsJsonP =<< randomProfilesH) ]
+
+-- | Machine adder handler.
+addMachineH :: Snap Bool
+addMachineH = do
+    md <- jsonParam "machine"  :: Snap MachineDescription
+    undefined
+
+-- | Machine update handler.
+updateMachineH :: Snap Bool
+updateMachineH = do
+    i <- readParam "id" :: Snap Int
+    md <- jsonParam "machine" :: Snap MachineDescription
+    undefined
+
+-- | Machine delete handler.
+deleteMachineH :: Snap Bool
+deleteMachineH = do
+    i <- readParam "id" :: Snap Int
+    undefined
+
+-- | User profile adder handler.
+addUserProfileH :: Snap Bool
+addUserProfileH = do
+    md <- jsonParam "profile" :: Snap UserProfile
+    undefined
+
+-- | User profile update handler.
+updateUserProfileH :: Snap Bool
+updateUserProfileH = do
+    i <- readParam "id" :: Snap Int
+    md <- jsonParam "profile" :: Snap UserProfile
+    undefined
+
+-- | User profile delete handler.
+deleteUserProfileH :: Snap Bool
+deleteUserProfileH = do
+    i <- readParam "id" :: Snap Int
+    undefined
 
 -- | Day handler.
 getDayH :: Snap ([(Int, Joule)], [(Int, Watt)])
