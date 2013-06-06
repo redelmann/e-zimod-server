@@ -23,7 +23,8 @@ library
                    containers,
                    rand-vars,
                    HDBC,
-                   HDBC-sqlite3
+                   HDBC-sqlite3,
+                   MonadCatchIO-transformers
   exposed-modules: Model,
                    Simulation,
                    Utils.DBManager
@@ -39,7 +40,8 @@ executable e-zimod
                    containers,
                    rand-vars,
                    HDBC,
-                   HDBC-sqlite3
+                   HDBC-sqlite3,
+                   MonadCatchIO-transformers
 
 test-suite test-model
   type:            exitcode-stdio-1.0

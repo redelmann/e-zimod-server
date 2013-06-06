@@ -6,9 +6,11 @@ import Snap
 import Data.Monoid
 import Data.Aeson
 import Data.List (sort)
+import Control.Exception
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Random
+import qualified Control.Monad.CatchIO as CIO
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as LBS
 
@@ -26,19 +28,17 @@ main = quickHttpServe site
 
 -- | Main site.
 site :: Snap ()
-site = route
+site = error400onException $ route
     [ ("getTableProfile",  sendAsJsonP =<< getProfilesH)
     , ("getTableMachine",  sendAsJsonP =<< getMachinesH)
     , ("getTableRelation", sendAsJsonP =<< getRelationH)
     
     -- Machine management.
     , ("addMachine",       sendAsJsonP =<< addMachineH)
-    , ("updateMachine",    sendAsJsonP =<< updateMachineH)
     , ("deleteMachine",    sendAsJsonP =<< deleteMachineH)
 
     -- User profile management.
     , ("addUserProfile",       sendAsJsonP =<< addUserProfileH)
-    , ("updateUserProfile",    sendAsJsonP =<< updateUserProfileH)
     , ("deleteUserProfile",    sendAsJsonP =<< deleteUserProfileH)
 
     , ("day",              sendAsJsonP =<< getDayH)
@@ -46,43 +46,42 @@ site = route
     , ("fridge",           sendAsJsonP =<< getFridgeProfileH)
     , ("randomProfile",    sendAsJsonP =<< randomProfilesH) ]
 
--- | Machine adder handler.
-addMachineH :: Snap Bool
-addMachineH = do
-    md <- jsonParam "machine"  :: Snap MachineDescription
-    undefined
 
--- | Machine update handler.
-updateMachineH :: Snap Bool
-updateMachineH = do
-    i <- readParam "id" :: Snap Int
-    md <- jsonParam "machine" :: Snap MachineDescription
-    undefined
+error400onException :: Snap a -> Snap a
+error400onException action = action `CIO.catch` handler
+  where
+    handler :: SomeException -> Snap a
+    handler _ = respondWith 400 "Bad request"
+
+-- | Machine adder handler.
+addMachineH :: Snap Integer
+addMachineH = do
+    md <- jsonParam "machine"
+    withConnection $ \ c -> do
+        addMachine c md
+        lastInsertedId c "machines"
 
 -- | Machine delete handler.
-deleteMachineH :: Snap Bool
+deleteMachineH :: Snap ()
 deleteMachineH = do
-    i <- readParam "id" :: Snap Int
-    undefined
+    i <- readParam "id"
+    withConnection $ \ c ->
+        deleteMachine c i
 
 -- | User profile adder handler.
-addUserProfileH :: Snap Bool
+addUserProfileH :: Snap Integer
 addUserProfileH = do
-    md <- jsonParam "profile" :: Snap UserProfile
-    undefined
-
--- | User profile update handler.
-updateUserProfileH :: Snap Bool
-updateUserProfileH = do
-    i <- readParam "id" :: Snap Int
-    md <- jsonParam "profile" :: Snap UserProfile
-    undefined
+    pr <- jsonParam "profile"
+    withConnection $ \ c -> do
+        addProfile c pr
+        lastInsertedId c "profiles"
 
 -- | User profile delete handler.
-deleteUserProfileH :: Snap Bool
+deleteUserProfileH :: Snap ()
 deleteUserProfileH = do
-    i <- readParam "id" :: Snap Int
-    undefined
+    i <- readParam "id"
+    withConnection $ \ c ->
+        deleteProfile c i
 
 -- | Day handler.
 getDayH :: Snap ([(Int, Joule)], [(Int, Watt)])
@@ -194,7 +193,9 @@ readParam param = requireParam param >>= getRead
 {- | Reads a parameter encoded via JSON, immediately responding
      an appropriate message if not present or not valid. -}
 jsonParam :: FromJSON a => BS.ByteString -> Snap a
-jsonParam param = requireParam param >>= getFromJson
+jsonParam param = do
+    requireParam param >>= (liftIO . BS.putStrLn)
+    readParam param >>= getFromJson
   where
     getFromJson :: FromJSON a => BS.ByteString -> Snap a
     getFromJson b = case decode $ LBS.fromChunks [b] of
@@ -227,3 +228,7 @@ sendAsText x = do
     writeBS $ BS.pack $ show x
     r <- getResponse
     finishWith r
+
+-- | Excutes an action on the database.
+withConnection :: (Connection -> IO a) -> Snap a
+withConnection = liftIO . withDataBase databaseName
