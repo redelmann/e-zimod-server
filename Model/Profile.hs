@@ -120,8 +120,9 @@ upTo pa@(Profile as) t = Profile $ as' ++ [(t, w)]
     w   = peekl pa t
 
 fromTime :: Profile -> Second -> Profile
-fromTime p s = let Profile xs = p `deferredBy` (0 - s) in
-  Profile $ dropWhile ((< 0) . fst) xs
+fromTime p s = 
+  let np@(Profile xs) = p `deferredBy` (0 - s) in
+  clean $ Profile $ (0, (peekr np 0)) : dropWhile ((< 0) . fst) xs
 
 -- | Defers a profile by some time.
 deferredBy :: Profile -> Second -> Profile

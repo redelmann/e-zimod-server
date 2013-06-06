@@ -90,7 +90,7 @@ deleteUserProfileH = do
 getQuarterH :: Snap [Profile]
 getQuarterH = do
     paramBuilder <- getParameters
-    from <- readParam "from"
+    from <- toRational <$> (readParam "from" :: Snap Integer)
     let params = paramBuilder (from + 900)
     forM (assocs $ machines params) $ \ (mid, md) -> do
         let Just machineUsage = lookup mid (usages $ userProfile params)

@@ -62,9 +62,9 @@ tempfilldb :: IO ()
 tempfilldb = do
   c <- initConn "test.db"
   -- mkUserProfile :: Name -> [(Name, State, [(Second, State)])] -> UserProfile
-  addProfile c (mkUserProfile "Marc"  [("frigo", "off",
+  addProfile c (mkUserProfile "Marc"  [("1", "off",
     [(10, "on"), (50, "off"), (220, "on")])])
-  addProfile c (mkUserProfile "Paul" [("frigo", "off",
+  addProfile c (mkUserProfile "Paul" [("2", "off",
     [(10, "on"), (50, "off"), (220, "on")]),
     ("radiateur", "on",
     [(200, "off"), (400, "on")])])
@@ -87,7 +87,7 @@ initConn = connectSqlite3
 
 addInto :: DBisable a => Connection -> String -> a -> IO Bool
 addInto c table input = do
-    n <- run c ("INSERT INTO " ++ table ++ " VALUES ?")
+    n <- run c ("INSERT INTO " ++ table ++ "(value) VALUES (?)")
            [toSql input]
     return (n > 0)
 
