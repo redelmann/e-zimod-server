@@ -3,6 +3,7 @@
 module Model.UserProfile
     ( UserProfile (..)
     , Name
+    , Id
     , mkUserProfile
     , MachineUsage (..)
     , concretize

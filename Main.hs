@@ -2,13 +2,17 @@
 
 module Main (main) where
 
-import Snap
+import Prelude hiding (lookup)
+import Snap hiding (forM)
 import Data.Monoid
 import Data.Aeson
+import Data.Traversable (forM)
 import Data.List (sort)
+import Data.Map (keys, assocs, lookup, fromList)
+import Data.Maybe
 import Control.Exception
 import Control.Applicative
-import Control.Monad
+import Control.Monad hiding (forM)
 import Control.Monad.Random
 import qualified Control.Monad.CatchIO as CIO
 import qualified Data.ByteString.Char8 as BS
@@ -17,6 +21,7 @@ import qualified Data.ByteString.Lazy.Char8 as LBS
 import Data.Profiles
 import Model
 import Settings
+import Simulation
 import Utils.DBManager
 
 instance RandPicker Snap where
@@ -41,10 +46,9 @@ site = error400onException $ route
     , ("addUserProfile",       sendAsJsonP =<< addUserProfileH)
     , ("deleteUserProfile",    sendAsJsonP =<< deleteUserProfileH)
 
-    , ("day",              sendAsJsonP =<< getDayH)
-    , ("week",             sendAsJsonP =<< getWeekH)
-    , ("fridge",           sendAsJsonP =<< getFridgeProfileH)
-    , ("randomProfile",    sendAsJsonP =<< randomProfilesH) ]
+    , ("quarter", sendAsJsonP =<< getQuarterH)
+    , ("day",     sendAsJsonP =<< getDayH)
+    , ("week",    sendAsJsonP =<< getWeekH)]
 
 
 error400onException :: Snap a -> Snap a
@@ -82,6 +86,27 @@ deleteUserProfileH = do
     i <- readParam "id"
     withConnection $ \ c ->
         deleteProfile c i
+
+getQuarterH :: Snap [Profile]
+getQuarterH = do
+    paramBuilder <- getParameters
+    from <- readParam "from"
+    let params = paramBuilder (from + 900)
+    forM (assocs $ machines params) $ \ (mid, md) -> do
+        let Just machineUsage = lookup mid (usages $ userProfile params)
+        let Just profile = computeProfile md (initially machineUsage) (usage machineUsage)
+        return $ (profile `fromTime` from) `upTo` 900
+
+getParameters :: Snap (Second -> Parameter)
+getParameters = do
+    userProfileId <- readParam "id"
+    (machines, userProfile) <- withConnection $ \ c -> do
+        Just userProfile <- getByID c "profiles" userProfileId :: IO (Maybe UserProfile)
+        machines <- forM (keys $ usages userProfile) $ \ machineId -> do
+            Just m <- getByID c "machines" (read machineId) :: IO (Maybe MachineDescription)
+            return (machineId, m)
+        return (fromList machines, userProfile)
+    return $ Parameter userProfile machines 900
 
 -- | Day handler.
 getDayH :: Snap ([(Int, Joule)], [(Int, Watt)])
