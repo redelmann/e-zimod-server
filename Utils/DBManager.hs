@@ -65,12 +65,76 @@ tempfilldb = do
   -- Name :: String
   -- beahvior :: [(State, Cyclic Profile)] 
   -- transition :: [(State, State, Second, Second)]
-  addMachine c 0 (MachineDescription "fridgy" [("on", Repeat $ fromJust $ mkProfile [(0,0),(10,200),(70,150),(72,0)]),
+  addMachine c (MachineDescription "fridgy" [("on", Repeat $ fromJust $ mkProfile [(0,0),(10,200),(70,150),(72,0)]),
                                                ("off", Once $ fromJust $ mkProfile [(0,10),(10,10)])]
                                               [("on","off",5,10),("off","on",5,20)])
-  addMachine c 1 (MachineDescription "lampy" [("on", Repeat $ fromJust $ mkProfile [(0,50),(10,50)]),
+  addMachine c (MachineDescription "lampy" [("on", Repeat $ fromJust $ mkProfile [(0,50),(10,50)]),
                                               ("off", Once $ fromJust $ mkProfile [(0,0),(10,0)])]
                                              [("on","off",5,10),("off","on",5,20)])
+  addMachine c (MachineDescription "TVy, CRT" [("on", Repeat $ fromJust $ mkProfile [(0,200)]),
+                                              ("off", once $ fromJust $ mkProfile [(0,5)])]
+                                             [("on","off",5,10),("off","on",5,20)])
+  addMachine c (MachineDescription "Personal computerish" [("on", Repeat $ fromJust $ mkProfile [(0,250]),
+                                              ("off", Once $ fromJust $ mkProfile [(0,21)])]
+                                             [("on","off",5,10),("off","on",5,20)])
+  addMachine c (MachineDescription "Heating, central furnace" [("on", Repeat $ fromJust $ mkProfile [(0,340]),
+                                              ("off", Once $ fromJust $ mkProfile [(0,4)])]
+                                             [("on","off",5,10),("off","on",5,20)])
+  addMachine c (MachineDescription "Cooling" [("on", Repeat $ fromJust $ mkProfile [(0,600]),
+                                              ("off", Once $ fromJust $ mkProfile [(0,3)])]
+                                             [("on","off",5,10),("off","on",5,20)])
+  addMachine c (MachineDescription "36inch ceiling fan" [("on", Repeat $ fromJust $ mkProfile [(0,55]),
+                                              ("off", Once $ fromJust $ mkProfile [(0,1)])]
+                                             [("on","off",5,10),("off","on",5,20)])
+  addMachine c (MachineDescription "Clothes dryer (electric)" [("on", Repeat $ fromJust $ mkProfile [(0,4400]),
+                                              ("off", Once $ fromJust $ mkProfile [(0,21)])]
+                                             [("on","off",5,10),("off","on",5,20)])
+  addMachine c (MachineDescription "Clothes washer" [("on", Repeat $ fromJust $ mkProfile [(0,400]),
+                                              ("off", Once $ fromJust $ mkProfile [(0,21)])]
+                                             [("on","off",5,10),("off","on",5,20)])
+  addMachine c (MachineDescription "Dishwasher" [("on", Repeat $ fromJust $ mkProfile [(0,3000]),
+                                              ("off", Once $ fromJust $ mkProfile [(0,21)])]
+                                             [("on","off",5,10),("off","on",5,20)])
+  addMachine c (MachineDescription "Microwave oven" [("on", Repeat $ fromJust $ mkProfile [(0,1440]),
+                                              ("off", Once $ fromJust $ mkProfile [(0,5)])]
+                                             [("on","off",5,10),("off","on",5,20)])
+  addMachine c (MachineDescription "Game Console: PS3" [("on", Repeat $ fromJust $ mkProfile [(0,194]),
+                                              ("off", Once $ fromJust $ mkProfile [(0,10)])]
+                                             [("on","off",5,10),("off","on",5,20)])
+  addMachine c (MachineDescription "Game Console: PS2" [("on", Repeat $ fromJust $ mkProfile [(0,30]),
+                                              ("off", Once $ fromJust $ mkProfile [(0,10)])]
+                                             [("on","off",5,10),("off","on",5,20)])
+  addMachine c (MachineDescription "Coffee maker" [("on", Repeat $ fromJust $ mkProfile [(0,900]),
+                                              ("off", Once $ fromJust $ mkProfile [(0,1)])]
+                                             [("on","off",5,10),("off","on",5,20)])
+  addMachine c (MachineDescription "Clock radio" [("on", Repeat $ fromJust $ mkProfile [(0,4]),
+                                              ("off", Once $ fromJust $ mkProfile [(0,1)])]
+                                             [("on","off",5,10),("off","on",5,20)])
+  addMachine c (MachineDescription "Vacuum cleaner" [("on", Repeat $ fromJust $ mkProfile [(0,1300]),
+                                              ("off", Once $ fromJust $ mkProfile [(0,0)])]
+                                             [("on","off",5,10),("off","on",5,20)])
+  addMachine c (MachineDescription "DVD Player" [("on", Repeat $ fromJust $ mkProfile [(0,10]),
+                                              ("off", Once $ fromJust $ mkProfile [(0,8)])]
+                                             [("on","off",5,10),("off","on",5,20)])
+  addMachine c (MachineDescription "Amplifier (music)" [("on", Repeat $ fromJust $ mkProfile [(0,40]),
+                                              ("off", Once $ fromJust $ mkProfile [(0,30)])]
+                                             [("on","off",5,10),("off","on",5,20)])
+  addMachine c (MachineDescription "Printer (Laser)" [("on", Repeat $ fromJust $ mkProfile [(0,130]),
+                                              ("off", Once $ fromJust $ mkProfile [(0,2)])]
+                                             [("on","off",5,10),("off","on",5,20)])
+  addMachine c (MachineDescription "Printer (Inkjet)" [("on", Repeat $ fromJust $ mkProfile [(0,5]),
+                                              ("off", Once $ fromJust $ mkProfile [(0,2)])]
+                                             [("on","off",5,10),("off","on",5,20)])
+  addMachine c (MachineDescription "Phone, cordless with answering machine" [("on", Repeat $ fromJust $ mkProfile [(0,5]),
+                                              ("off", Once $ fromJust $ mkProfile [(0,3)])]
+                                             [("on","off",5,10),("off","on",5,20)])
+  addMachine c (MachineDescription "Modem, DSL" [("on", Repeat $ fromJust $ mkProfile [(0,5]),
+                                              ("off", Once $ fromJust $ mkProfile [(0,1)])]
+                                             [("on","off",5,10),("off","on",5,20)])
+  addMachine c (MachineDescription "Fax (Laser)" [("on", Repeat $ fromJust $ mkProfile [(0,6]),
+                                              ("off", Once $ fromJust $ mkProfile [(0,6)])]
+                                             [("on","off",5,10),("off","on",5,20)])
+
   commit c
   disconnect c
 
