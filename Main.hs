@@ -6,9 +6,11 @@ import Snap
 import Data.Monoid
 import Data.Aeson
 import Data.List (sort)
+import Control.Exception
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Random
+import qualified Control.Monad.CatchIO as CIO
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as LBS
 
@@ -26,7 +28,7 @@ main = quickHttpServe site
 
 -- | Main site.
 site :: Snap ()
-site = route
+site = error400onException $ route
     [ ("getTableProfile",  sendAsJsonP =<< getProfilesH)
     , ("getTableMachine",  sendAsJsonP =<< getMachinesH)
     , ("getTableRelation", sendAsJsonP =<< getRelationH)
@@ -43,6 +45,13 @@ site = route
     , ("week",             sendAsJsonP =<< getWeekH)
     , ("fridge",           sendAsJsonP =<< getFridgeProfileH)
     , ("randomProfile",    sendAsJsonP =<< randomProfilesH) ]
+
+
+error400onException :: Snap a -> Snap a
+error400onException action = action `CIO.catch` handler
+  where
+    handler :: SomeException -> Snap a
+    handler _ = respondWith 400 "Bad request"
 
 -- | Machine adder handler.
 addMachineH :: Snap Integer
