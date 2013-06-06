@@ -12,6 +12,7 @@ module Model.Profile
     , andThen
     , upTo
     , deferredBy
+    , fromTime
     , clean
     -- * Computations
     , peek
@@ -117,6 +118,10 @@ upTo pa@(Profile as) t = Profile $ as' ++ [(t, w)]
   where
     as' = takeWhile ((< t) . fst) as
     w   = peekl pa t
+
+fromTime :: Profile -> Second -> Profile
+fromTime p s = let Profile xs = p `deferredBy` (0 - s) in
+  Profile $ dropWhile ((< 0) . fst) xs
 
 -- | Defers a profile by some time.
 deferredBy :: Profile -> Second -> Profile

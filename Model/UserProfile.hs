@@ -3,6 +3,7 @@
 module Model.UserProfile
     ( UserProfile (..)
     , Name
+    , Id
     , mkUserProfile
     , MachineUsage (..)
     , concretize
@@ -22,11 +23,12 @@ import Model.State
 import Model.Types
 import Model.Machine
 
+type Id = String
 type Name = String
 
 data UserProfile = UserProfile
     { userName :: Name
-    , usages   :: M.Map Name MachineUsage }
+    , usages   :: M.Map Id MachineUsage }
     deriving (Eq, Show)
 
 data MachineUsage = MachineUsage
@@ -34,7 +36,7 @@ data MachineUsage = MachineUsage
     , usage     :: [(Second, State)] }
     deriving (Eq, Show)
 
-mkUserProfile :: Name -> [(Name, State, [(Second, State)])] -> UserProfile
+mkUserProfile :: Name -> [(Id, State, [(Second, State)])] -> UserProfile
 mkUserProfile name = UserProfile name . M.fromList .
     map (\ (n, s, us) -> (n, MachineUsage s us))
 
@@ -72,6 +74,6 @@ instance FromJSON UserProfile where
     parseJSON _ = mzero
 
 concretize :: UserProfile
-           -> M.Map Name MachineDescription
+           -> M.Map Id MachineDescription
            -> [(MachineDescription, MachineUsage)]
 concretize (UserProfile _ uss) mds = M.elems $ M.intersectionWith (,) mds uss

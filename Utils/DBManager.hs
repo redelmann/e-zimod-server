@@ -3,7 +3,12 @@
 module Utils.DBManager
     ( resetDB
     , initConn
+    , addMachine
+    , deleteMachine
+    , lastInsertedId
+    , withDataBase
     , addProfile
+    , deleteProfile
     , getProfile
     , getByID
     , getTable
@@ -14,6 +19,7 @@ module Utils.DBManager
     , tempfilldb
     ) where
 
+import Control.Monad (void)
 import Data.Functor ((<$>))
 import Data.Maybe (listToMaybe, fromJust)
 import Data.Convertible.Base
@@ -24,6 +30,7 @@ import Model.Profile
 import Model.UserProfile
 import Model.Machine
 import Data.Aeson
+import Settings
 
 type DBisable a = (Convertible a SqlValue, Convertible SqlValue a)
 
@@ -44,8 +51,8 @@ resetDB c = do
     mapM_ (\ t -> run c ("CREATE TABLE " ++ t) []) tables
     commit c
   where
-    tables = [ "userprofiles (id INTEGER PRIMARY KEY, value TEXT)"
-             , "machines (id INTEGER PRIMARY KEY, value TEXT)"
+    tables = [ "userprofiles (id INTEGER PRIMARY KEY AUTOINCREMENT, value TEXT)"
+             , "machines (id INTEGER PRIMARY KEY AUTOINCREMENT, value TEXT)"
              , "relations (pid INTEGER, mid INTEGER" ++
                           ", FOREIGN KEY(pid) REFERENCES userprofiles(id)" ++
                           ", FOREIGN KEY(mid) REFERENCES machines(id)" ++
@@ -55,9 +62,9 @@ tempfilldb :: IO ()
 tempfilldb = do
   c <- initConn "test.db"
   -- mkUserProfile :: Name -> [(Name, State, [(Second, State)])] -> UserProfile
-  addProfile c 0 (mkUserProfile "Marc"  [("frigo", "off",
+  addProfile c (mkUserProfile "Marc"  [("frigo", "off",
     [(10, "on"), (50, "off"), (220, "on")])])
-  addProfile c 1 (mkUserProfile "Paul" [("frigo", "off",
+  addProfile c (mkUserProfile "Paul" [("frigo", "off",
     [(10, "on"), (50, "off"), (220, "on")]),
     ("radiateur", "on",
     [(200, "off"), (400, "on")])])
@@ -134,7 +141,6 @@ tempfilldb = do
   addMachine c (MachineDescription "Fax (Laser)" [("on", Repeat $ fromJust $ mkProfile [(0,6]),
                                               ("off", Once $ fromJust $ mkProfile [(0,6)])]
                                              [("on","off",5,10),("off","on",5,20)])
-
   commit c
   disconnect c
 
@@ -142,10 +148,10 @@ tempfilldb = do
 initConn :: String -> IO Connection
 initConn = connectSqlite3
 
-addInto :: DBisable a => Connection -> String -> Integer -> a -> IO Bool
-addInto c table i input = do
-    n <- run c ("INSERT INTO " ++ table ++ " VALUES (?, ?)")
-           [toSql i, toSql input]
+addInto :: DBisable a => Connection -> String -> a -> IO Bool
+addInto c table input = do
+    n <- run c ("INSERT INTO " ++ table ++ " VALUES ?")
+           [toSql input]
     return (n > 0)
 
 getByID :: DBisable a => Connection -> String -> Integer -> IO (Maybe a)
@@ -183,14 +189,27 @@ getForm c table i = do
     extract :: DBisable a => [[SqlValue]] -> a
     extract [[v]] = fromSql v
 
--- | Adds a Profile with the given id.
-addProfile :: Connection -> Integer -> UserProfile -> IO Bool
+-- | Adds a Profile.
+addProfile :: Connection -> UserProfile -> IO Bool
 addProfile c = addInto c "userprofiles"
 
--- | Add a Machine with the given id
-addMachine :: Connection -> Integer -> MachineDescription -> IO Bool
+-- | Add a Machine.
+addMachine :: Connection -> MachineDescription -> IO Bool
 addMachine c = addInto c "machines"
+
+deleteMachine :: Connection -> Integer -> IO ()
+deleteMachine c i = void $ quickQuery' c ("DELETE FROM machines WHERE id = ?") [toSql i]
+
+deleteProfile :: Connection -> Integer -> IO ()
+deleteProfile c i = void $ quickQuery' c ("DELETE FROM profiles WHERE id = ?") [toSql i]
 
 -- | Recovers a Profile from a given id.
 getProfile :: Connection -> Integer -> IO UserProfile
 getProfile c i = fromJust <$> getByID c "userprofiles" i
+
+lastInsertedId :: Connection -> String -> IO Integer
+lastInsertedId c table = do
+    extract <$> quickQuery' c ("SELECT last_insert_rowid() FROM " ++ table) []
+  where
+    extract :: [[SqlValue]] -> Integer
+    extract [[v]] = fromSql v

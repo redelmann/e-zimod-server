@@ -2,19 +2,26 @@
 
 module Main (main) where
 
-import Snap
+import Prelude hiding (lookup)
+import Snap hiding (forM)
 import Data.Monoid
 import Data.Aeson
+import Data.Traversable (forM)
 import Data.List (sort)
+import Data.Map (keys, assocs, lookup, fromList)
+import Data.Maybe
+import Control.Exception
 import Control.Applicative
-import Control.Monad
+import Control.Monad hiding (forM)
 import Control.Monad.Random
+import qualified Control.Monad.CatchIO as CIO
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as LBS
 
 import Data.Profiles
 import Model
 import Settings
+import Simulation
 import Utils.DBManager
 
 instance RandPicker Snap where
@@ -33,56 +40,73 @@ site = route
     
     -- Machine management.
     , ("addMachine",       sendAsJsonP =<< addMachineH)
-    , ("updateMachine",    sendAsJsonP =<< updateMachineH)
     , ("deleteMachine",    sendAsJsonP =<< deleteMachineH)
 
     -- User profile management.
     , ("addUserProfile",       sendAsJsonP =<< addUserProfileH)
-    , ("updateUserProfile",    sendAsJsonP =<< updateUserProfileH)
     , ("deleteUserProfile",    sendAsJsonP =<< deleteUserProfileH)
 
-    , ("day",              sendAsJsonP =<< getDayH)
-    , ("week",             sendAsJsonP =<< getWeekH)
-    , ("fridge",           sendAsJsonP =<< getFridgeProfileH)
-    , ("randomProfile",    sendAsJsonP =<< randomProfilesH) ]
+    , ("quarter", sendAsJsonP =<< getQuarterH)
+    , ("day",     sendAsJsonP =<< getDayH)
+    , ("week",    sendAsJsonP =<< getWeekH)]
+
+
+error400onException :: Snap a -> Snap a
+error400onException action = action `CIO.catch` handler
+  where
+    handler :: SomeException -> Snap a
+    handler _ = respondWith 400 "Bad request"
 
 -- | Machine adder handler.
-addMachineH :: Snap Bool
+addMachineH :: Snap Integer
 addMachineH = do
-    md <- jsonParam "machine"  :: Snap MachineDescription
-    undefined
-
--- | Machine update handler.
-updateMachineH :: Snap Bool
-updateMachineH = do
-    i <- readParam "id" :: Snap Int
-    md <- jsonParam "machine" :: Snap MachineDescription
-    undefined
+    md <- jsonParam "machine"
+    withConnection $ \ c -> do
+        addMachine c md
+        lastInsertedId c "machines"
 
 -- | Machine delete handler.
-deleteMachineH :: Snap Bool
+deleteMachineH :: Snap ()
 deleteMachineH = do
-    i <- readParam "id" :: Snap Int
-    undefined
+    i <- readParam "id"
+    withConnection $ \ c ->
+        deleteMachine c i
 
 -- | User profile adder handler.
-addUserProfileH :: Snap Bool
+addUserProfileH :: Snap Integer
 addUserProfileH = do
-    md <- jsonParam "profile" :: Snap UserProfile
-    undefined
-
--- | User profile update handler.
-updateUserProfileH :: Snap Bool
-updateUserProfileH = do
-    i <- readParam "id" :: Snap Int
-    md <- jsonParam "profile" :: Snap UserProfile
-    undefined
+    pr <- jsonParam "profile"
+    withConnection $ \ c -> do
+        addProfile c pr
+        lastInsertedId c "userprofiles"
 
 -- | User profile delete handler.
-deleteUserProfileH :: Snap Bool
+deleteUserProfileH :: Snap ()
 deleteUserProfileH = do
-    i <- readParam "id" :: Snap Int
-    undefined
+    i <- readParam "id"
+    withConnection $ \ c ->
+        deleteProfile c i
+
+getQuarterH :: Snap [Profile]
+getQuarterH = do
+    paramBuilder <- getParameters
+    from <- readParam "from"
+    let params = paramBuilder (from + 900)
+    forM (assocs $ machines params) $ \ (mid, md) -> do
+        let Just machineUsage = lookup mid (usages $ userProfile params)
+        let Just profile = computeProfile md (initially machineUsage) (usage machineUsage)
+        return $ profile `fromTime` from `upTo` 900
+
+getParameters :: Snap (Second -> Parameter)
+getParameters = do
+    userProfileId <- readParam "id"
+    (machines, userProfile) <- withConnection $ \ c -> do
+        Just userProfile <- getByID c "userprofiles" userProfileId :: IO (Maybe UserProfile)
+        machines <- forM (keys $ usages userProfile) $ \ machineId -> do
+            Just m <- getByID c "machines" (read machineId) :: IO (Maybe MachineDescription)
+            return (machineId, m)
+        return (fromList machines, userProfile)
+    return $ Parameter userProfile machines 900
 
 -- | Day handler.
 getDayH :: Snap ([(Int, Joule)], [(Int, Watt)])
@@ -194,7 +218,9 @@ readParam param = requireParam param >>= getRead
 {- | Reads a parameter encoded via JSON, immediately responding
      an appropriate message if not present or not valid. -}
 jsonParam :: FromJSON a => BS.ByteString -> Snap a
-jsonParam param = requireParam param >>= getFromJson
+jsonParam param = do
+    requireParam param >>= (liftIO . BS.putStrLn)
+    readParam param >>= getFromJson
   where
     getFromJson :: FromJSON a => BS.ByteString -> Snap a
     getFromJson b = case decode $ LBS.fromChunks [b] of
@@ -227,3 +253,7 @@ sendAsText x = do
     writeBS $ BS.pack $ show x
     r <- getResponse
     finishWith r
+
+-- | Excutes an action on the database.
+withConnection :: (Connection -> IO a) -> Snap a
+withConnection = liftIO . withDataBase databaseName
