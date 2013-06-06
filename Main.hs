@@ -95,7 +95,7 @@ getQuarterH = do
     forM (assocs $ machines params) $ \ (mid, md) -> do
         let Just machineUsage = lookup mid (usages $ userProfile params)
         let Just profile = computeProfile md (initially machineUsage) (usage machineUsage)
-        return $ (profile `fromTime` from) `upTo` 900
+        return $ profile `fromTime` from `upTo` 900
 
 getParameters :: Snap (Second -> Parameter)
 getParameters = do
