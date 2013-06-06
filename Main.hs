@@ -57,7 +57,6 @@ error400onException action = action `CIO.catch` handler
 addMachineH :: Snap Integer
 addMachineH = do
     md <- jsonParam "machine"
-    liftIO $ putStrLn $ show md
     withConnection $ \ c -> do
         addMachine c md
         lastInsertedId c "machines"
@@ -67,19 +66,22 @@ deleteMachineH :: Snap ()
 deleteMachineH = do
     i <- readParam "id"
     withConnection $ \ c ->
-        deleteMachine c "machines" i
+        deleteMachine c i
 
 -- | User profile adder handler.
-addUserProfileH :: Snap Bool
+addUserProfileH :: Snap Integer
 addUserProfileH = do
-    md <- jsonParam "profile" :: Snap UserProfile
-    undefined
+    pr <- jsonParam "profile"
+    withConnection $ \ c -> do
+        addProfile c pr
+        lastInsertedId c "profiles"
 
 -- | User profile delete handler.
-deleteUserProfileH :: Snap Bool
+deleteUserProfileH :: Snap ()
 deleteUserProfileH = do
-    i <- readParam "id" :: Snap Int
-    undefined
+    i <- readParam "id"
+    withConnection $ \ c ->
+        deleteProfile c i
 
 -- | Day handler.
 getDayH :: Snap ([(Int, Joule)], [(Int, Watt)])

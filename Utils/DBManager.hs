@@ -8,6 +8,7 @@ module Utils.DBManager
     , lastInsertedId
     , withDataBase
     , addProfile
+    , deleteProfile
     , getProfile
     , getByID
     , getTable
@@ -133,8 +134,11 @@ addProfile c = addInto c "userprofiles"
 addMachine :: Connection -> MachineDescription -> IO Bool
 addMachine c = addInto c "machines"
 
-deleteMachine :: Connection -> String -> Integer -> IO ()
-deleteMachine c table i = void $ quickQuery' c ("DELETE FROM " ++ table ++ " WHERE id = ?") [toSql i]
+deleteMachine :: Connection -> Integer -> IO ()
+deleteMachine c i = void $ quickQuery' c ("DELETE FROM machines WHERE id = ?") [toSql i]
+
+deleteProfile :: Connection -> Integer -> IO ()
+deleteProfile c i = void $ quickQuery' c ("DELETE FROM profiles WHERE id = ?") [toSql i]
 
 -- | Recovers a Profile from a given id.
 getProfile :: Connection -> Integer -> IO UserProfile
