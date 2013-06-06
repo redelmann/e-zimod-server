@@ -33,7 +33,7 @@ main = quickHttpServe site
 
 -- | Main site.
 site :: Snap ()
-site = error400onException $ route
+site = route
     [ ("getTableProfile",  sendAsJsonP =<< getProfilesH)
     , ("getTableMachine",  sendAsJsonP =<< getMachinesH)
     , ("getTableRelation", sendAsJsonP =<< getRelationH)
@@ -78,7 +78,7 @@ addUserProfileH = do
     pr <- jsonParam "profile"
     withConnection $ \ c -> do
         addProfile c pr
-        lastInsertedId c "profiles"
+        lastInsertedId c "userprofiles"
 
 -- | User profile delete handler.
 deleteUserProfileH :: Snap ()
@@ -101,7 +101,7 @@ getParameters :: Snap (Second -> Parameter)
 getParameters = do
     userProfileId <- readParam "id"
     (machines, userProfile) <- withConnection $ \ c -> do
-        Just userProfile <- getByID c "profiles" userProfileId :: IO (Maybe UserProfile)
+        Just userProfile <- getByID c "userprofiles" userProfileId :: IO (Maybe UserProfile)
         machines <- forM (keys $ usages userProfile) $ \ machineId -> do
             Just m <- getByID c "machines" (read machineId) :: IO (Maybe MachineDescription)
             return (machineId, m)
