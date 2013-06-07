@@ -118,7 +118,7 @@ getDayH = do
         let Just machineUsage = lookup mid (usages $ userProfile params)
         let Just profile = computeProfile md (initially machineUsage) (usage machineUsage)
         return $ profile `fromTime` from `upTo` totalTime
-    let spl = sampledValues $ foldl1' merge $ map (computeSample sampleTime) ps
+    let spl = sampledValues $ foldl1' merge $ map (takeOnly (24 * 4) . computeSample sampleTime) ps
     let mxs = computeMaximums sampleTime $ foldl1' combine ps
     return (zip [0..] spl, zip [0..] mxs)
   where
@@ -134,9 +134,9 @@ getWeekH = do
         let Just machineUsage = lookup mid (usages $ userProfile params)
         let Just profile = computeProfile md (initially machineUsage) (usage machineUsage)
         return $ profile `fromTime` from `upTo` totalTime
-    let spl = sampledValues $ foldl1' merge $ map (computeSample sampleTime) ps
+    let spl = sampledValues $ foldl1' merge $ map (takeOnly 7 . computeSample sampleTime) ps
     let mxs = map maximum $ splits $ sampledValues $
-              foldl1' merge $ map (computeSample quarterTime) ps
+              foldl1' merge $ map (takeOnly (24 * 4 * 7) . computeSample quarterTime) ps
     return (zip [0..] spl, zip [0..] mxs)
   where
     quarterTime = 900

@@ -27,7 +27,8 @@ library
                    MonadCatchIO-transformers
   exposed-modules: Model,
                    Simulation,
-                   Utils.DBManager
+                   Utils.DBManager,
+                   Settings
 
 executable e-zimod
   main-is:         Main.hs

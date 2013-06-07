@@ -4,6 +4,7 @@ module Model.Sample
     ( Sample
     , computeSample
     , computeMaximums
+    , takeOnly
     , merge
     , sampledValues
     ) where
@@ -43,6 +44,9 @@ instance ToJSON Sample where
 instance FromJSON Sample where
     parseJSON (Object v) = Sample <$> v .: "time" <*> v .: "data"
     parseJSON _ = mzero
+
+takeOnly :: Int -> Sample -> Sample
+takeOnly i (Sample k xs) = Sample k $ take i xs
 
 merge :: Sample -> Sample -> Sample
 merge (Sample t xs) (Sample t' ys) | t == t' = Sample t $ zipWith (+) xs ys
