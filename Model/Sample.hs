@@ -3,6 +3,7 @@
 module Model.Sample
     ( Sample
     , computeSample
+    , computeMaximums
     , merge
     , sampledValues
     ) where
@@ -56,6 +57,17 @@ computeSample t p = Sample t $ go 0 p
         t1 = t0 + t
         (n, n') = split p' t1
         x       = computeEnergy t0 t1 n
+
+computeMaximums :: Second -> Profile -> [Watt]
+computeMaximums t p = go 0 p
+  where
+    go :: Rational -> Profile -> [Watt]
+    go i p' = x : go (i + 1) n'
+      where
+        t0 = i * t
+        t1 = t0 + t
+        (n, n') = split p' t1
+        x       = maximum $ map snd $ getList n
 
 sampledValues :: Sample -> [Joule]
 sampledValues (Sample _ vs) = vs

@@ -7,7 +7,7 @@ import Snap hiding (forM)
 import Data.Monoid
 import Data.Aeson
 import Data.Traversable (forM)
-import Data.List (sort)
+import Data.List (sort, foldl1')
 import Data.Map (keys, assocs, lookup, fromList)
 import Data.Maybe
 import Control.Exception
@@ -111,29 +111,41 @@ getParameters = do
 -- | Day handler.
 getDayH :: Snap ([(Int, Joule)], [(Int, Watt)])
 getDayH = do
-    mms <- pick $ replicateM (4 * 24) meanAndMax
-    let means = zip [1 ..] $ map (toRational . fst) mms
-    let maxs  = zip [1 ..] $ map (toRational . snd) mms
-    return (means, maxs)
+    paramBuilder <- getParameters
+    from <- toRational <$> (readParam "from" :: Snap Integer)
+    let params = paramBuilder (from + totalTime)
+    ps <- forM (assocs $ machines params) $ \ (mid, md) -> do
+        let Just machineUsage = lookup mid (usages $ userProfile params)
+        let Just profile = computeProfile md (initially machineUsage) (usage machineUsage)
+        return $ profile `fromTime` from `upTo` totalTime
+    let spl = sampledValues $ foldl1' merge $ map (computeSample sampleTime) ps
+    let mxs = computeMaximums sampleTime $ foldl1' combine ps
+    return (zip [0..] spl, zip [0..] mxs)
   where
-    meanAndMax :: Rand (Int, Int)
-    meanAndMax = do
-        mean <- inRange (20, 50)
-        maxv <- (+ mean) <$> inRange (2, 20)
-        return (mean * 15 * 60, maxv)
+    sampleTime = 900
+    totalTime = 60 * 60 * 24
 
 getWeekH :: Snap ([(Int, Joule)], [(Int, Joule)])
 getWeekH = do
-    mms <- pick $ replicateM 7 meanAndMax
-    let means = zip [1 ..] $ map (toRational . fst) mms
-    let maxs  = zip [1 ..] $ map (toRational . snd) mms
-    return (means, maxs)
+    paramBuilder <- getParameters
+    from <- toRational <$> (readParam "from" :: Snap Integer)
+    let params = paramBuilder (from + totalTime)
+    ps <- forM (assocs $ machines params) $ \ (mid, md) -> do
+        let Just machineUsage = lookup mid (usages $ userProfile params)
+        let Just profile = computeProfile md (initially machineUsage) (usage machineUsage)
+        return $ profile `fromTime` from `upTo` totalTime
+    let spl = sampledValues $ foldl1' merge $ map (computeSample sampleTime) ps
+    let mxs = map maximum $ splits $ sampledValues $
+              foldl1' merge $ map (computeSample quarterTime) ps
+    return (zip [0..] spl, zip [0..] mxs)
   where
-    meanAndMax :: Rand (Int, Int)
-    meanAndMax = do
-        mean <- inRange (20, 50)
-        maxv <- (+ mean) <$> inRange (2, 20)
-        return (mean * 60 * 60 * 24, maxv * 15 * 60)
+    quarterTime = 900
+    sampleTime = 60 * 60 * 24
+    totalTime = 60 * 60 * 24 * 7
+
+    splits :: [a] -> [[a]]
+    splits [] = []
+    splits xs = let (as, bs) = splitAt (24 * 4) xs in as : splits bs
 
 -- | Profiles handler.
 getProfilesH :: Snap [(Integer, UserProfile)]

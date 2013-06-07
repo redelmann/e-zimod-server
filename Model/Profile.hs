@@ -9,6 +9,7 @@ module Model.Profile
     , square
     -- * Transformations
     , split
+    , combine
     , andThen
     , upTo
     , deferredBy
@@ -78,6 +79,16 @@ constant w = Profile [(0, w)]
 square :: Watt -> Second -> Watt -> Second -> Profile
 square w1 dt1 w2 dt2 = Profile
     [(0, w1), (dt1, w1), (dt1, w2), (dt1 + dt2, w2)]
+
+combine :: Profile -> Profile -> Profile
+combine x@(Profile xs) y@(Profile ys) = Profile $ comb xs ys
+  where
+    comb [] p = p
+    comb p [] = p
+    comb ((tx, vx):xs) ((ty, vy):ys)
+      | tx == ty = (tx, vx + vy) : comb xs ys
+      | tx < ty = let vy' = peekl y tx in (tx, vx + vy') : comb xs ((ty, vy): ys)
+      | otherwise = let vx' = peekl x ty in (ty, vy + vx') : comb ((tx, vx): xs) ys  
 
 -- | Removes useless points.
 clean :: Profile -> Profile
