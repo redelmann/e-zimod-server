@@ -119,7 +119,7 @@ getDayH = do
         let Just profile = computeProfile md (initially machineUsage) (usage machineUsage)
         return $ profile `fromTime` from `upTo` totalTime
     let spl = sampledValues $ foldl1' merge $ map (takeOnly (24 * 4) . computeSample sampleTime) ps
-    let mxs = computeMaximums sampleTime $ foldl1' combine ps
+    let mxs = take (24 * 4) $ computeMaximums sampleTime $ foldl1' combine ps
     return (zip [0..] spl, zip [0..] mxs)
   where
     sampleTime = 900
