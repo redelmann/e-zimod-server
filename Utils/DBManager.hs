@@ -66,7 +66,7 @@ tempfilldb = do
     [(10, "on"), (50, "off"), (220, "on")])])
   addProfile c (mkUserProfile "Paul" [("2", "off",
     [(10, "on"), (50, "off"), (220, "on")]),
-    ("radiateur", "on",
+    ("11", "on",
     [(200, "off"), (400, "on")])])
   -- MachineDescription 
   -- Name :: String
